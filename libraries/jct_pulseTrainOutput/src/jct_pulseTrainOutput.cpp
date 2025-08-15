@@ -26,3 +26,13 @@
   attribution back to the original author.
 */
 #include "jct_pulseTrainOutput.h"
+
+
+PCICR |= B00000001;  // Enables pin change interrupts on ports B and D. 
+PCMSK0 |= B00000010; // Enables pin change interrupt on port B, Bit 1. Pin 9 on the nano/uno.
+
+
+// Handles the pin change interrupt for the button on pin 9.
+ISR(PCINT0_vect) { // Pins D8-D13
+    uint8_t portB = PINB;
+}

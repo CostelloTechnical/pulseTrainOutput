@@ -33,12 +33,12 @@
 class jctPulseTrainOutput
   {
   // addresses of output ports - NULL if not applicable
-  volatile byte * const _timerRegA;
-  volatile byte * const _timerRegB;
-  volatile byte * const _timerOCRH;
-  volatile byte * const _timerOCRL;
-  volatile byte * const _timerTCNTH;
-  volatile byte * const _timerTCNTL;
+  volatile byte * const _timerRegA;   // Timer Control Register A
+  volatile byte * const _timerRegB;   // Timer Control Register B
+  volatile byte * const _timerOCRH;   // Output Compare Register High Byte
+  volatile byte * const _timerOCRL;   // Output Compare Register Low Byte
+  volatile byte * const _timerTCNTH;  // Timer/Counter High Byte
+  volatile byte * const _timerTCNTL;  // Timer/Counter Low Byte
   
   public:
     // constructor
@@ -59,7 +59,7 @@ class jctPulseTrainOutput
          _timerTCNTL (&timerTCNTL)
   { }
     
-    void tone (const unsigned int Hz);
+    void  (const unsigned int Hz);
     void noTone ();
     
   };  // end of TonePlayer
