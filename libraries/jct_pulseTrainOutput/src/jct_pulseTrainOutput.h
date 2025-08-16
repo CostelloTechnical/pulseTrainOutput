@@ -27,40 +27,49 @@
 */
 #ifndef JCT_PULSETRAINOUTPUT_H
 #define JCT_PULSETRAINOUTPUT_H
-
 #include <Arduino.h>
 
-class jctPulseTrainOutput
-  {
-  // addresses of output ports - NULL if not applicable
-  volatile byte * const _timerRegA;   // Timer Control Register A
-  volatile byte * const _timerRegB;   // Timer Control Register B
-  volatile byte * const _timerOCRH;   // Output Compare Register High Byte
-  volatile byte * const _timerOCRL;   // Output Compare Register Low Byte
-  volatile byte * const _timerTCNTH;  // Timer/Counter High Byte
-  volatile byte * const _timerTCNTL;  // Timer/Counter Low Byte
-  
+enum pulseModes {
+    STOP = 0,
+    DISCRETE = 1,
+    CONTINUOUS = 2
+};
+
+enum microcontroller {
+    UNKNOWN = 0,
+    UNO = 1,
+    NANO = 2,
+    MEGA = 3
+};
+
+class pulseTrainOutput{
   public:
     // constructor
-    TonePlayer (
-          // ports
-          volatile byte & timerRegA, 
-          volatile byte & timerRegB, 
-          volatile byte & timerOCRH,
-          volatile byte & timerOCRL, 
-          volatile byte & timerTCNTH, 
-          volatile byte & timerTCNTL)
-       : 
-         _timerRegA  (&timerRegA), 
-         _timerRegB  (&timerRegB),
-         _timerOCRH  (&timerOCRH), 
-         _timerOCRL  (&timerOCRL), 
-         _timerTCNTH (&timerTCNTH), 
-         _timerTCNTL (&timerTCNTL)
-  { }
-    
-    void  (const unsigned int Hz);
-    void noTone ();
-    
-  };  // end of TonePlayer
+    pulseTrainOutput (
+      volatile uint8_t & timerRegA,
+      volatile uint8_t & timerRegB,
+      volatile uint8_t & timerOCRH,
+      volatile uint8_t & timerOCRL,
+      volatile uint8_t & timerTCNTH,
+      volatile uint8_t & timerTCNTL);
+
+    static pulseTrainOutput* _classPointer;
+    static volatile bool _pulseState;
+    static volatile uint8_t _pulseMode;
+    static volatile uint32_t _pulseCounter;
+    static volatile uint32_t _pulses;
+
+    void generate (const uint32_t Hz, uint32_t pulses, pulseModes mode);
+    void stop ();
+
+
+  private:
+    // addresses of output ports - NULL if not applicable
+    volatile uint8_t * const _timerRegA;   // Timer Control Register A
+    volatile uint8_t * const _timerRegB;   // Timer Control Register B
+    volatile uint8_t * const _timerOCRH;   // Output Compare Register High Byte
+    volatile uint8_t * const _timerOCRL;   // Output Compare Register Low Byte
+    volatile uint8_t * const _timerTCNTH;  // Timer/Counter High Byte
+    volatile uint8_t * const _timerTCNTL;  // Timer/Counter Low Byte
+  };
 #endif
