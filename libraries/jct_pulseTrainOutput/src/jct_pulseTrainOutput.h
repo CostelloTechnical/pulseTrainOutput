@@ -37,25 +37,19 @@ enum pulseModes {
 
 enum microcontrollers {
     UNKNOWN = 0,
-    UNO = 1,  // Allowable pin: D9.
-    NANO = 2, // Allowable pin: D9.
-    MEGA = 3  // Allowable pins: D5, D6, D11, D46.
-};
-
-enum pins{
-  D5 = 5,
-  D6 = 6,
-  D9 = 9,
-  D11 = 11,
-  D46 = 46
+    UNO = 1,  // Allowable pin: D9. Compatable with UNO, UNO Rev2 and UNO R3.
+    NANO = 2, // Allowable pin: D9. Compatable with Nano (basic model only).
+    MINI = 3, // Allowable pin: D9. 
+    MEGA = 4  // Allowable pin: D11.
 };
 
 class pulseTrainOutput{
   public:
     // constructor
-    pulseTrainOutput (microcontrollers microcontroller, pins pin);
+    pulseTrainOutput (microcontrollers microcontroller);
     static pulseTrainOutput* _classPointer;
     static volatile bool _pulseState;
+    static volatile uint8_t _pin;
     static volatile uint8_t _pulseMode;
     static volatile uint32_t _pulseCounter;
     static volatile uint32_t _pulses;

@@ -28,40 +28,49 @@
 #include "jct_pulseTrainOutput.h"
 pulseTrainOutput* pulseTrainOutput::_classPointer = nullptr;
 volatile bool pulseTrainOutput::_pulseState = false;
+volatile uint8_t pulseTrainOutput::_pin = 0;
 volatile uint8_t pulseTrainOutput::_pulseMode = STOP;
 volatile uint32_t pulseTrainOutput::_pulseCounter = 0;
 volatile uint32_t pulseTrainOutput::_pulses = 0;
 
-// Handles the pin change interrupt for the button on pin 9.
+// Handles the pin change interrupt for the button on pin 9
 ISR(PCINT0_vect) { // Pins D8-D13
   uint8_t portB = PINB;
   if (pulseTrainOutput::_pulseMode == DISCRETE){
-    pulseTrainOutput::_pulseCounter += (portB & B00000010)==B00000010;
+    pulseTrainOutput::_pulseCounter += (portB & pulseTrainOutput::_pin)==pulseTrainOutput::_pin;
     if (pulseTrainOutput::_pulseCounter >= pulseTrainOutput::_pulses){
-      if ((portB & B00000010)==B00000000){
+      if ((portB & pulseTrainOutput::_pin)== 0){
         pulseTrainOutput::_classPointer->stop();
       }
     }
   }
 }
 
-pulseTrainOutput::pulseTrainOutput (microcontrollers microcontroller, pins pin){
+pulseTrainOutput::pulseTrainOutput (microcontrollers microcontroller){
   _classPointer = this;
-  if(microcontroller == UNO | microcontroller == NANO){
-    if(pin == D9){
-      PCICR |= B00000001;  // Enables pin change interrupts on ports B. 
-      PCMSK0 |= B00000010; // Enables pin change interrupt on port B, Bit 1. Pin 9 on the nano/uno.
-      pinMode (D9, OUTPUT);
-      _timerRegA  = TCCR1A;
-      _timerRegB  = TCCR1B;
-      _timerOCRH  = OCR1AH;
-      _timerOCRL  = OCR1AL;
-      _timerTCNTH = TCNT1H;
-      _timerTCNTL = TCNT1L;
-    }
+  if(microcontroller == UNO | microcontroller == NANO | microcontroller == MINI){
+    PCICR |= B00000001;  // Enables pin change interrupts on ports B. 
+    PCMSK0 |= B00000010; // Enables pin change interrupt on port B, Bit 2. Pin 9 on the nano/uno.
+    _pin = B00000010;
+    pinMode (9, OUTPUT);
+    _timerRegA  = TCCR1A;
+    _timerRegB  = TCCR1B;
+    _timerOCRH  = OCR1AH;
+    _timerOCRL  = OCR1AL;
+    _timerTCNTH = TCNT1H;
+    _timerTCNTL = TCNT1L;
   }//
   else if(microcontroller == MEGA){
-    
+    PCICR |= B00000001;  // Enables pin change interrupts on ports B. 
+    PCMSK0 |= B00100000; // Enables pin change interrupt on port B, Bit 6. Pin 11 on the mega.
+    _pin = B00100000;
+    pinMode (11, OUTPUT);
+    _timerRegA  = TCCR1A;
+    _timerRegB  = TCCR1B;
+    _timerOCRH  = OCR1AH;
+    _timerOCRL  = OCR1AL;
+    _timerTCNTH = TCNT1H;
+    _timerTCNTL = TCNT1L;
   }
 }
 
@@ -93,7 +102,7 @@ void pulseTrainOutput::generate (const uint32_t Hz, uint32_t pulses, pulseModes 
   
   *_timerRegA = _BV (COM1A0);             // toggle output pin
   *_timerRegB = _BV (WGM12) | prescaler;  // CTC
-  }  // end of TonePlayer::tone
+  }
 
 void pulseTrainOutput::stop ()
   {
@@ -102,4 +111,4 @@ void pulseTrainOutput::stop ()
   *_timerRegB = 0;
   _pulseMode = STOP;
   _pulseCounter = 0;
-  } // end of TonePlayer::noTone
+  }
