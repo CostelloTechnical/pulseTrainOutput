@@ -48,29 +48,29 @@ ISR(PCINT0_vect) { // Pins D8-D13
 
 pulseTrainOutput::pulseTrainOutput (microcontrollers microcontroller){
   _classPointer = this;
-  if(microcontroller == UNO | microcontroller == NANO | microcontroller == MINI){
-    PCICR |= B00000001;  // Enables pin change interrupts on ports B. 
-    PCMSK0 |= B00000010; // Enables pin change interrupt on port B, Bit 2. Pin 9 on the nano/uno.
+  if(microcontroller == UNO || microcontroller == NANO || microcontroller == MINI){
     _pin = B00000010;
+    PCICR |= B00000001;  // Enables pin change interrupts on ports B. 
+    PCMSK0 |= _pin; // Enables pin change interrupt on port B, Bit 2. Pin 9 on the nano/uno.
     pinMode (9, OUTPUT);
-    _timerRegA  = TCCR1A;
-    _timerRegB  = TCCR1B;
-    _timerOCRH  = OCR1AH;
-    _timerOCRL  = OCR1AL;
-    _timerTCNTH = TCNT1H;
-    _timerTCNTL = TCNT1L;
+    _timerRegA  = &TCCR1A;
+    _timerRegB  = &TCCR1B;
+    _timerOCRH  = &OCR1AH;
+    _timerOCRL  = &OCR1AL;
+    _timerTCNTH = &TCNT1H;
+    _timerTCNTL = &TCNT1L;
   }//
   else if(microcontroller == MEGA){
-    PCICR |= B00000001;  // Enables pin change interrupts on ports B. 
-    PCMSK0 |= B00100000; // Enables pin change interrupt on port B, Bit 6. Pin 11 on the mega.
     _pin = B00100000;
+    PCICR |= B00000001;  // Enables pin change interrupts on ports B. 
+    PCMSK0 |= _pin; // Enables pin change interrupt on port B, Bit 6. Pin 11 on the mega.
     pinMode (11, OUTPUT);
-    _timerRegA  = TCCR1A;
-    _timerRegB  = TCCR1B;
-    _timerOCRH  = OCR1AH;
-    _timerOCRL  = OCR1AL;
-    _timerTCNTH = TCNT1H;
-    _timerTCNTL = TCNT1L;
+    _timerRegA  = &TCCR1A;
+    _timerRegB  = &TCCR1B;
+    _timerOCRH  = &OCR1AH;
+    _timerOCRL  = &OCR1AL;
+    _timerTCNTH = &TCNT1H;
+    _timerTCNTL = &TCNT1L;
   }
 }
 
