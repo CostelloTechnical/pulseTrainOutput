@@ -45,25 +45,25 @@ ISR(PCINT0_vect) { // Pins D8-D13
   }
 }
 
-pulseTrainOutput::pulseTrainOutput (
-  volatile uint8_t & timerRegA,
-  volatile uint8_t & timerRegB,
-  volatile uint8_t & timerOCRH,
-  volatile uint8_t & timerOCRL,
-  volatile uint8_t & timerTCNTH,
-  volatile uint8_t & timerTCNTL)
-  :
-  _timerRegA  (&timerRegA),
-  _timerRegB  (&timerRegB),
-  _timerOCRH  (&timerOCRH),
-  _timerOCRL  (&timerOCRL),
-  _timerTCNTH (&timerTCNTH),
-  _timerTCNTL (&timerTCNTL){
-    _classPointer = this;
-    PCICR |= B00000001;  // Enables pin change interrupts on ports B and D. 
-    PCMSK0 |= B00000010; // Enables pin change interrupt on port B, Bit 1. Pin 9 on the nano/uno.
+pulseTrainOutput::pulseTrainOutput (microcontrollers microcontroller, pins pin){
+  _classPointer = this;
+  if(microcontroller == UNO | microcontroller == NANO){
+    if(pin == D9){
+      PCICR |= B00000001;  // Enables pin change interrupts on ports B. 
+      PCMSK0 |= B00000010; // Enables pin change interrupt on port B, Bit 1. Pin 9 on the nano/uno.
+      pinMode (D9, OUTPUT);
+      _timerRegA  = TCCR1A;
+      _timerRegB  = TCCR1B;
+      _timerOCRH  = OCR1AH;
+      _timerOCRL  = OCR1AL;
+      _timerTCNTH = TCNT1H;
+      _timerTCNTL = TCNT1L;
+    }
+  }//
+  else if(microcontroller == MEGA){
+    
   }
-
+}
 
 void pulseTrainOutput::generate (const uint32_t Hz, uint32_t pulses, pulseModes mode)
 {

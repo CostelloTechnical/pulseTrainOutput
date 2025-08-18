@@ -35,24 +35,25 @@ enum pulseModes {
     CONTINUOUS = 2
 };
 
-enum microcontroller {
+enum microcontrollers {
     UNKNOWN = 0,
-    UNO = 1,
-    NANO = 2,
-    MEGA = 3
+    UNO = 1,  // Allowable pin: D9.
+    NANO = 2, // Allowable pin: D9.
+    MEGA = 3  // Allowable pins: D5, D6, D11, D46.
+};
+
+enum pins{
+  D5 = 5,
+  D6 = 6,
+  D9 = 9,
+  D11 = 11,
+  D46 = 46
 };
 
 class pulseTrainOutput{
   public:
     // constructor
-    pulseTrainOutput (
-      volatile uint8_t & timerRegA,
-      volatile uint8_t & timerRegB,
-      volatile uint8_t & timerOCRH,
-      volatile uint8_t & timerOCRL,
-      volatile uint8_t & timerTCNTH,
-      volatile uint8_t & timerTCNTL);
-
+    pulseTrainOutput (microcontrollers microcontroller, pins pin);
     static pulseTrainOutput* _classPointer;
     static volatile bool _pulseState;
     static volatile uint8_t _pulseMode;
@@ -65,11 +66,11 @@ class pulseTrainOutput{
 
   private:
     // addresses of output ports - NULL if not applicable
-    volatile uint8_t * const _timerRegA;   // Timer Control Register A
-    volatile uint8_t * const _timerRegB;   // Timer Control Register B
-    volatile uint8_t * const _timerOCRH;   // Output Compare Register High Byte
-    volatile uint8_t * const _timerOCRL;   // Output Compare Register Low Byte
-    volatile uint8_t * const _timerTCNTH;  // Timer/Counter High Byte
-    volatile uint8_t * const _timerTCNTL;  // Timer/Counter Low Byte
+    volatile uint8_t * _timerRegA;   // Timer Control Register A
+    volatile uint8_t * _timerRegB;   // Timer Control Register B
+    volatile uint8_t * _timerOCRH;   // Output Compare Register High Byte
+    volatile uint8_t * _timerOCRL;   // Output Compare Register Low Byte
+    volatile uint8_t * _timerTCNTH;  // Timer/Counter High Byte
+    volatile uint8_t * _timerTCNTL;  // Timer/Counter Low Byte
   };
 #endif
