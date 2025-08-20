@@ -24,6 +24,11 @@
 
   It is highly encouraged that if you find this library useful, you provide
   attribution back to the original author.
+
+
+16,000,000 / (2 * 1024 * 256) ≈ 30.5 Hz
+
+
 */
 #ifndef JCT_PULSETRAINOUTPUT_H
 #define JCT_PULSETRAINOUTPUT_H
@@ -35,36 +40,60 @@ enum pulseModes {
     CONTINUOUS = 2
 };
 
-enum microcontrollers {
-    UNKNOWN = 0,
-    UNO = 1,  // Allowable pin: D9. Compatable with UNO, UNO Rev2 and UNO R3.
-    NANO = 2, // Allowable pin: D9. Compatable with Nano (basic model only).
-    MINI = 3, // Allowable pin: D9. 
-    MEGA = 4  // Allowable pin: D11.
+// An enum to help us index our static array
+
+enum timerIds {
+    TID_TIMER1,
+    TID_TIMER2,
+    TID_TIMER3,
+    TID_TIMER4,
+    TID_TIMER5,
+    TID_INVALID
 };
 
 class pulseTrainOutput{
   public:
-    // constructor
-    pulseTrainOutput (microcontrollers microcontroller);
-    static pulseTrainOutput* _classPointer;
-    static volatile bool _pulseState;
-    static volatile uint8_t _pin;
-    static volatile uint8_t _pulseMode;
-    static volatile uint32_t _pulseCounter;
-    static volatile uint32_t _pulses;
+    // --- Static Array for ISRs ---
+    // An array of pointers, one for each possible timer instance.
+    static pulseTrainOutput* _instances[5];
 
-    void generate (const uint32_t Hz, uint32_t pulses, pulseModes mode);
-    void stop ();
+    // Constructor: Takes a pin and automatically configures for the correct timer.
+    pulseTrainOutput(uint8_t pin);
 
+    // Start generating pulses. Returns false if frequency is out of range.
+    bool generate(uint32_t frequency, pulseModes mode, uint32_t pulses = 1);
+    
+    // Stop generating pulses. 
+    void stop();
 
-  private:
-    // addresses of output ports - NULL if not applicable
-    volatile uint8_t * _timerRegA;   // Timer Control Register A
-    volatile uint8_t * _timerRegB;   // Timer Control Register B
-    volatile uint8_t * _timerOCRH;   // Output Compare Register High Byte
-    volatile uint8_t * _timerOCRL;   // Output Compare Register Low Byte
-    volatile uint8_t * _timerTCNTH;  // Timer/Counter High Byte
-    volatile uint8_t * _timerTCNTL;  // Timer/Counter Low Byte
-  };
-#endif
+    // Check if the pulse train is currently active.
+    bool isRunning();
+
+    // Public interrupt handler that the global ISRs will call.
+    void handleInterrupt();
+
+private:
+    // --- Member Variables for this instance ---
+    uint8_t _pin;
+    timerIds _timerId; // Which hardware timer this object controls
+    bool _is16bit;    // Flag to handle 8-bit vs 16-bit timer differences
+
+    // Pointers to the hardware registers for this timer.
+    volatile uint8_t* _tccrA;
+    volatile uint8_t* _tccrB;
+    volatile uint8_t* _timsk;
+    volatile uint16_t* _ocr; // Use 16-bit pointer for both for simplicity
+
+    // Interrupt control
+    uint8_t _ocieBit; // The bit to set in the TIMSK register
+
+    // State variables
+    volatile uint32_t _pulseCounter;
+    volatile uint32_t _pulsesToGenerate;
+    volatile uint8_t _pulseMode;
+    volatile bool _isRunning;
+    volatile uint8_t* _inputPort;
+    uint8_t _pinBitMask;
+};
+
+#endif // JCT_PULSETRAINOUTPUT_H
