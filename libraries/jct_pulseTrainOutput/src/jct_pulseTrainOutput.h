@@ -25,10 +25,6 @@
   It is highly encouraged that if you find this library useful, you provide
   attribution back to the original author.
 
-
-16,000,000 / (2 * 1024 * 256) ≈ 30.5 Hz
-
-
 */
 #ifndef JCT_PULSETRAINOUTPUT_H
 #define JCT_PULSETRAINOUTPUT_H
@@ -61,13 +57,14 @@ class pulseTrainOutput{
     pulseTrainOutput(uint8_t pin);
 
     // Start generating pulses. Returns false if frequency is out of range.
-    bool generate(uint32_t frequency, pulseModes mode, uint32_t pulses = 1);
+    bool generate(uint32_t frequency, pulseModes mode = CONTINUOUS, uint32_t pulses = 1);
     
     // Stop generating pulses. 
     void stop();
 
     // Check if the pulse train is currently active.
-    bool isRunning();
+    bool isRunning() const;
+    bool isValid() const;
 
     // Public interrupt handler that the global ISRs will call.
     void handleInterrupt();
@@ -83,16 +80,19 @@ private:
     volatile uint8_t* _tccrB;
     volatile uint8_t* _timsk;
     volatile uint16_t* _ocr; // Use 16-bit pointer for both for simplicity
+    volatile uint8_t* _outputPort;
 
     // Interrupt control
     uint8_t _ocieBit; // The bit to set in the TIMSK register
+    uint8_t _comStopMask;
+    uint8_t _comToggleBit;
 
     // State variables
     volatile uint32_t _pulseCounter;
+    volatile bool _pulseState;
     volatile uint32_t _pulsesToGenerate;
     volatile uint8_t _pulseMode;
     volatile bool _isRunning;
-    volatile uint8_t* _inputPort;
     uint8_t _pinBitMask;
 };
 
