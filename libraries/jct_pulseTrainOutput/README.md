@@ -1,12 +1,11 @@
-# JCT Arduino Hardware Pulse Train Library
+# JCT Arduino Hardware Pulse Train Output Library
 
-A high-performance Arduino library for generating precise discrete or continuous hardware-timed pulse trains on Uno and Mega boards.
+An Arduino library for generating precise discrete or continuous hardware-timed pulse trains on Uno and Mega boards.
 
-This library allows for direct control of the AVR microcontroller's hardware timers to produce highly accurate, non-blocking square waves. It is designed to be efficient and flexible, supporting multiple concurrent pulse trains on different timer-enabled pins.
+This library allows for direct control of the AVR microcontroller's hardware timers to produce highly accurate, non-blocking square waves. It is designed to supporting multiple concurrent pulse trains on different timer-enabled pins.
 
 ## Key Features
 
-* Hardware-Timed Precision: Bypasses the standard Arduino tone() function for direct, low-level register control.
 * Non-Blocking Operation: Once started, the hardware generates the waveform, leaving the CPU free to perform other tasks.
 * Multiple Modes:
     * CONTINUOUS: Generate an unending square wave.
@@ -39,15 +38,41 @@ Note: Timer0 pins and Channel B/C pins are currently unsupported to maintain sim
 
 ## Basic Usage (Quick Start)
 
-Here is a minimal example to generate a continuous 1 kHz tone on Pin 9 of an Arduino Uno.
+A minimal example to generate a continuous 1 kHz square wave on Pin 9 of an Arduino Uno.
 
-cpp #include "jct_pulseTrainOutput.h"  // Create an object for a timer-enabled pin. 
-pulseTrainOutput pto(9); 
-void setup() {   // The constructor handles all hardware setup.   
-// No begin() method is needed.      
-// Start a continuous 1000 Hz square wave.   
-pto.generate(1000); }  
-void loop() {   // The hardware generates the wave, so the loop is free } 
+```cpp
+#include "jct_pulseTrainOutput.h"
+
+// Create an object for a timer-enabled pin.
+pulseTrainOutput pto(9);
+
+void setup() {
+  // Start a continuous 1000 Hz wave.
+  pto.generate(1000);
+}
+
+void loop() {
+  // The hardware generates the wave, so the loop is free!
+}
+```
+
+A minimal example to generate a discrete 10 kHz 4 pulse square wave on Pin 9 of an Arduino Uno.
+
+```cpp
+#include "jct_pulseTrainOutput.h"
+
+// Create an object for a timer-enabled pin.
+pulseTrainOutput pto(9);
+
+void setup() {
+  // Generate 4 discrete pulses at 10 kHz from pin 11
+  pto.generate(10000, DISCRETE, 4);
+}
+
+void loop() {
+  // The hardware generates the wave, so the loop is free!
+}
+```
 
 ## API Reference
 
