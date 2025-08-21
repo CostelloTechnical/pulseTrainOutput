@@ -1,4 +1,4 @@
-/*
+/**
  * @file jct_pulseTrainOutput.h
  * @author CostelloTechnical
  * @brief Header file for the jct_pulseTrainOutput library.
@@ -6,6 +6,8 @@
  * pulse trains on various output pins of Arduino Uno and Mega boards.
  * @version 1.2
  * @date 2025-08-21
+ 
+ 
   ==============================================================================
                                   DISCLAIMER
   ==============================================================================

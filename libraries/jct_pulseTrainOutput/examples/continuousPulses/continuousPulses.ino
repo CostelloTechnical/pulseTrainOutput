@@ -1,3 +1,16 @@
+/**
+ * @file continuousPulses.ino
+ * @author CostelloTechnical
+ * 
+ * @brief This code generates a 1000Hz square wave for 30
+ * seconds before it's stopped. If an incorrect value was entered 
+ * the error is printed to the Serial monitor and explained.
+ * It also checks and prints the current generating state of the 
+ * pin to the serial monitor.
+ * 
+ * @date 2025-08-21
+*/
+
 #include "jct_pulseTrainOutput.h"
 
 pulseTrainOutput pto(11);      // Setting the pin that we want to generate pulses from.
