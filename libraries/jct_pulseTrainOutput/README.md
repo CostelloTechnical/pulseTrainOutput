@@ -37,15 +37,6 @@ This library is board-aware and will automatically use the correct timer for the
 
 Note: Timer0 pins and Channel B/C pins are currently unsupported to maintain simplicity and avoid conflicts with core Arduino timing functions like millis() and delay().
 
-## Installation
-
-1.  Download the library files (jct_pulseTrainOutput.h and jct_pulseTrainOutput.cpp).
-2.  In the Arduino IDE, go to Sketch > Show Sketch Folder.
-3.  Create a folder named libraries inside your sketch folder if it doesn't already exist.
-4.  Create a folder named jct_pulseTrainOutput inside the libraries folder.
-5.  Place the .h and .cpp files inside the jct_pulseTrainOutput folder.
-6.  Restart the Arduino IDE.
-
 ## Basic Usage (Quick Start)
 
 Here is a minimal example to generate a continuous 1 kHz tone on Pin 9 of an Arduino Uno.
