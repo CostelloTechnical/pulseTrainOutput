@@ -209,10 +209,12 @@ pulseTrainOutput::pulseTrainOutput(uint8_t pin) {
  */
 bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pulses) {
     // 1. --- Safety Checks ---
-    if (_isRunning || _timerId == TID_INVALID || frequency == 0) {
+    if (_isRunning || _timerId == TID_INVALID || frequency == 0 || mode > CONTINUOUS || mode <= STOP) {
         _error = _isRunning ? ACTIVE : _error;
         _error = frequency == 0 ? ZERO_HZ : _error;
         _error = _timerId == TID_INVALID ? INVALID_PIN : _error;
+        _error = mode > CONTINUOUS ? INVALID_MODE : _error;
+        _error = mode <= STOP ? INVALID_MODE : _error;
         return false;
     }
 
@@ -223,6 +225,13 @@ bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pu
         _pulsesToGenerate = pulses * 2;
         _pulseCounter = 0;
     }
+
+    uint32_t ocrValue;
+    uint8_t prescalerBits;
+
+    if (!_calculateTimingParameters(frequency, ocrValue, prescalerBits)) {
+        return false; // New frequency is out of range
+    }
      // Disable global interrupts during hardware configuration to prevent issues.
     cli();
 
@@ -230,11 +239,75 @@ bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pu
     *_tccrA = 0;
     *_tccrB = 0;
 
+    // 4. --- Write Configuration to Hardware Registers ---
+    *_ocr = ocrValue;
+    
+    // This generic logic works because the constructor stored the correct bit names.
+    switch (_timerId) {
+        case TID_TIMER1: case TID_TIMER3: case TID_TIMER4: case TID_TIMER5:
+            *_tccrA |= _BV(COM1A0);  // Set Toggle on Compare Match
+            *_tccrB |= _BV(WGM12);   // Set CTC mode
+            break;
+        case TID_TIMER2:
+            *_tccrA |= _BV(COM2A0) | _BV(WGM21); // Set Toggle and CTC mode for Timer2
+            break;
+    }
+    
+    // 5. --- Enable Interrupts and Start Timer ---
+    if (mode == DISCRETE) {
+        *_timsk |= (1 << _ocieBit); // Enable interrupt only if needed.
+    }
+    _isRunning = true;
+    *_tccrB |= prescalerBits;
+
+    sei(); // Re-enable global interrupts.
+    return true;
+}
+
+/**
+ * @brief Instantly updates the frequency, changing the prescaler if necessary.
+ */
+bool pulseTrainOutput::updateFrequency(uint32_t newFrequency) {
+    // 1. --- Safety Checks ---
+    if (!_isRunning || newFrequency == 0) {
+        return false;
+    }
+
+    // 2. --- Calculate New OCR and Prescaler ---
+    // This logic is reused from the generate() function to find the optimal
+    // prescaler and OCR value for the new frequency.
     uint32_t ocrValue;
-    uint8_t prescalerBits = 0;
+    uint8_t prescalerBits;
+
+    if (!_calculateTimingParameters(newFrequency, ocrValue, prescalerBits)) {
+        return false; // New frequency is out of range
+    }
+
+    // 3. --- Perform the Hardware Update ---
+    cli(); // Disable interrupts for safety
+
+    // Temporarily stop the timer by clearing the clock bits.
+    // This is the cleanest way to change the prescaler.
+    uint8_t tccrb_cache = *_tccrB; // Cache the current TCCRB value
+    *_tccrB &= ~(_BV(CS12) | _BV(CS11) | _BV(CS10)); // Universal mask for all timers
+
+    // Update the OCR value to the new target.
+    *_ocr = ocrValue;
+
+    // Restart the timer with the new prescaler.
+    // We restore the old TCCRB value (minus the old clock bits)
+    // and apply the new clock bits.
+    *_tccrB = (tccrb_cache & ~(_BV(CS12) | _BV(CS11) | _BV(CS10))) | prescalerBits;
+
+    sei(); // Re-enable interrupts
+
+    return true; // Success!
+}
+
+bool pulseTrainOutput::_calculateTimingParameters(uint32_t frequency, uint32_t& ocrValue, uint8_t& prescalerBits) {
     uint32_t maxOcr = _is16bit ? 0xFFFF : 0xFF;
 
-    // 3. --- Prescaler and OCR Calculation Logic ---
+    // Prescaler and OCR Calculation Logic.
     // This block tries each prescaler from fastest to slowest until it finds one
     // that allows the calculated OCR value to fit within the timer's bit-depth.
     if (_is16bit) { // For 16-bit timers (1, 3, 4, 5)
@@ -256,7 +329,8 @@ bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pu
             ocrValue = (F_CPU / (2UL * 1024 * frequency)) - 1;
             prescalerBits = _BV(CS12) | _BV(CS10); // Prescaler 1024
         }
-    } else { // For 8-bit Timer2
+    }//
+    else { // For 8-bit Timer2
         ocrValue = (F_CPU / (2UL * frequency)) - 1;
         prescalerBits = _BV(CS20); // Prescaler 1
         if (ocrValue > maxOcr) {
@@ -287,31 +361,9 @@ bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pu
     
     // If the value is still too large, the frequency is out of range.
     if (ocrValue > maxOcr) {
-        sei(); return false;
+        _error = FREQUENCY_HIGH;
+        return false;
     }
-
-    // 4. --- Write Configuration to Hardware Registers ---
-    *_ocr = ocrValue;
-    
-    // This generic logic works because the constructor stored the correct bit names.
-    switch (_timerId) {
-        case TID_TIMER1: case TID_TIMER3: case TID_TIMER4: case TID_TIMER5:
-            *_tccrA |= _BV(COM1A0);  // Set Toggle on Compare Match
-            *_tccrB |= _BV(WGM12);   // Set CTC mode
-            break;
-        case TID_TIMER2:
-            *_tccrA |= _BV(COM2A0) | _BV(WGM21); // Set Toggle and CTC mode for Timer2
-            break;
-    }
-    
-    // 5. --- Enable Interrupts and Start Timer ---
-    if (mode == DISCRETE) {
-        *_timsk |= (1 << _ocieBit); // Enable interrupt only if needed.
-    }
-    _isRunning = true;
-    *_tccrB |= prescalerBits;
-
-    sei(); // Re-enable global interrupts.
     return true;
 }
 

@@ -27,6 +27,12 @@ void setup() {
         else if(pto.getError() == ACTIVE){
             Serial.println("The selected pin is currently active.");
         }
+        else if(pto.getError() == INVALID_MODE){
+            Serial.println("The mode you selected is not available/allowed.");
+        }
+        else if(pto.getError() == FREQUENCY_HIGH){
+            Serial.println("The frequency selected is out of range.");
+        }
     }
     stopTimer_ms = millis();       // Set the stop timer.
     checkGenerating_ms = millis(); // Set the check generating timer.    

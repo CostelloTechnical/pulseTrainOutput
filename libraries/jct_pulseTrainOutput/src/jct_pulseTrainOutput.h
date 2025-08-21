@@ -47,10 +47,12 @@ enum pulseModes {
 };
 
 enum errors{
-  NO_ERROR = 0,     // No error.
-  INVALID_PIN = 1,  // There was an invalid pin input in the constructor. Check the allowable pins for the microcontroller.
-  ZERO_HZ = 2,      // 0Hz is not an allowable frequency.
-  ACTIVE = 3        // The timer is currently generating.
+  NO_ERROR = 0,       // No error.
+  INVALID_PIN = 1,    // There was an invalid pin input in the constructor. Check the allowable pins for the microcontroller.
+  ZERO_HZ = 2,        // 0Hz is not an allowable frequency.
+  ACTIVE = 3,         // The timer is currently generating.
+  INVALID_MODE = 4,   // An invalid mode was selected.
+  FREQUENCY_HIGH = 5  // The frequency is out of range.
 };
 
 /**
@@ -96,6 +98,16 @@ class pulseTrainOutput{
     bool generate(uint32_t frequency, pulseModes mode = CONTINUOUS, uint32_t pulses = 1);
     
     /**
+     * @brief Instantly updates the frequency, changing the prescaler if necessary.
+     * This may cause a minor timing glitch (a single malformed pulse) at the moment
+     * of the prescaler change.
+     * @param newFrequency The new frequency in Hertz.
+     * @return true if the frequency was updated successfully.
+     * @return false if the timer is not running or the frequency is out of range.
+     */
+    bool updateFrequency(uint32_t newFrequency);
+    
+    /**
      * @brief Immediately stops the pulse train generation.
      */ 
     void stop();
@@ -119,6 +131,15 @@ class pulseTrainOutput{
     void handleInterrupt();
 
 private:
+    /**
+     * @brief Private helper function to calculate the optimal OCR value and prescaler settings for a given frequency.
+     * @param frequency The target frequency in Hertz.
+     * @param ocrValue A reference to a variable where the calculated OCR value will be stored.
+     * @param prescalerBits A reference to a variable where the calculated TCCRB register bits for the prescaler will be stored.
+     * @return true if a valid setting is found, false if the frequency is out of range.
+     */
+    bool _calculateTimingParameters(uint32_t frequency, uint32_t& ocrValue, uint8_t& prescalerBits);
+    
      // --- Instance Members ---
     uint8_t _pin;                         // The Arduino pin number this object controls.
     timerIds _timerId;                    // The hardware timer this instance is mapped to (e.g., TID_TIMER1).
