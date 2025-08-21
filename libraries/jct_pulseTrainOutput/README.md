@@ -1,17 +1,3 @@
-Excellent. Thinking about this on a Thursday evening here in the UK, writing the README is the final, crucial step to package your library for others (and your future self!) to use. A good README tells the story of your project: what it does, why it's useful, and how to use it.
-
-The standard format for a README is a text file named README.md. The .md stands for Markdown, which is a very simple way to add formatting like headings, lists, and code blocks to plain text.
-
-Here is a step-by-step guide and a complete, filled-out template for your library.
-
-Step 1: Create the File
-In the root directory of your library (the jct_pulseTrainOutput/ folder), create a new text file and name it exactly README.md.
-
-Step 2: Write the Content using Markdown
-Here is a breakdown of the essential sections for a great README, complete with the actual content for your library. You can copy and paste this directly into your README.md file.
-
-(Start Copying Here)
-
 JCT Arduino Hardware Pulse Train Library
 A high-performance Arduino library for generating precise discrete or continuous hardware-timed pulse trains on Uno and Mega boards.
 
