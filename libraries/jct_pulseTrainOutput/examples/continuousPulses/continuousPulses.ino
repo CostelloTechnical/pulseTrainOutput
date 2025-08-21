@@ -8,6 +8,8 @@
  * It also checks and prints the current generating state of the 
  * pin to the serial monitor.
  * 
+ * For a complete list of compatable pins for a given microcontroller, see the README file.
+ * 
  * @date 2025-08-21
 */
 

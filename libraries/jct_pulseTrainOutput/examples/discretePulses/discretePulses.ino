@@ -6,6 +6,8 @@
  * and repeats it every three seconds. If an incorrect value was entered 
  * the error is printed to the Serial monitor and explained.
  * 
+ * For a complete list of compatable pins for a given microcontroller, see the README file.
+ * 
  * @date 2025-08-21
 */
 
