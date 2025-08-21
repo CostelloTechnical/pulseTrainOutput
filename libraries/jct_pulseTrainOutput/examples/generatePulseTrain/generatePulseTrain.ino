@@ -1,5 +1,6 @@
 #include "jct_pulseTrainOutput.h"
 
+
 // Setting up timer1 on pin 9 as a pulse train output.
 pulseTrainOutput pto1(9);
 // Setting up timer2 on pin 11 as a pulse train output.

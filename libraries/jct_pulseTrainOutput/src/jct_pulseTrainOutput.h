@@ -4,7 +4,7 @@
  * @brief Header file for the jct_pulseTrainOutput library.
  * This library provides a C++ class to generate precise, hardware-timed
  * pulse trains on various output pins of Arduino Uno and Mega boards.
- * @version 1.1
+ * @version 1.2
  * @date 2025-08-21
   ==============================================================================
                                   DISCLAIMER
@@ -44,6 +44,13 @@ enum pulseModes {
     STOP = 0,       // Not used, represents the stopped state.
     DISCRETE = 1,   // Generate a specific number of pulses and then stop.
     CONTINUOUS = 2  // Generate a continuous, unending wave.
+};
+
+enum errors{
+  NO_ERROR = 0,     // No error.
+  INVALID_PIN = 1,  // There was an invalid pin input in the constructor. Check the allowable pins for the microcontroller.
+  ZERO_HZ = 2,      // 0Hz is not an allowable frequency.
+  ACTIVE = 3        // The timer is currently generating.
 };
 
 /**
@@ -99,6 +106,12 @@ class pulseTrainOutput{
      */
     bool isRunning() const;
 
+    /**
+     * @brief Checks if there was an error with generating.
+     * @return Returns the current error, if any.
+     */
+    uint8_t getError() const;
+
      /**
      * @brief The C++ interrupt handler method. This is called by the global ISR trampolines.
      * It contains the logic for counting discrete pulses.
@@ -110,6 +123,7 @@ private:
     uint8_t _pin;                         // The Arduino pin number this object controls.
     timerIds _timerId;                    // The hardware timer this instance is mapped to (e.g., TID_TIMER1).
     bool _is16bit;                        // Flag to handle 8-bit vs 16-bit timer differences.
+    uint8_t _error;                       // Holds the most recinet error.
 
 
     // --- Pointers to Hardware Registers ---

@@ -4,7 +4,7 @@
  * @brief Header file for the jct_pulseTrainOutput library.
  * This library provides a C++ class to generate precise, hardware-timed
  * pulse trains on various output pins of Arduino Uno and Mega boards.
- * @version 1.1
+ * @version 1.2
  * @date 2025-08-21
   ==============================================================================
                                   DISCLAIMER
@@ -102,6 +102,7 @@ pulseTrainOutput::pulseTrainOutput(uint8_t pin) {
     _pin = pin;
     _timerId = TID_INVALID; // Default to invalid
     _isRunning = false;
+    _error = 0;
         #if defined(__AVR_ATmega2560__) // Arduino Mega
         switch (_pin) {
             case 11: // Timer 1 (16-bit), Channel A
@@ -209,6 +210,9 @@ pulseTrainOutput::pulseTrainOutput(uint8_t pin) {
 bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pulses) {
     // 1. --- Safety Checks ---
     if (_isRunning || _timerId == TID_INVALID || frequency == 0) {
+        _error = _isRunning ? ACTIVE : _error;
+        _error = frequency == 0 ? ZERO_HZ : _error;
+        _error = _timerId == TID_INVALID ? INVALID_PIN : _error;
         return false;
     }
 
@@ -347,4 +351,12 @@ void pulseTrainOutput::handleInterrupt() {
  */
 bool pulseTrainOutput::isRunning() const{
     return _isRunning;
+}
+
+/**
+ * @brief Checks if there was an error with generating.
+ * @return Returns the current error, if any.
+ */
+uint8_t pulseTrainOutput::getError() const{
+    return _error;
 }
