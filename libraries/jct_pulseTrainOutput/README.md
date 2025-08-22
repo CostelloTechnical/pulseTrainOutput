@@ -13,6 +13,18 @@ This library allows for direct control of the AVR microcontroller's hardware tim
 * Multi-Channel Support: Run multiple, independent pulse trains simultaneously on different hardware timers (up to 2 on Uno, up to 5 on Mega).
 * Dynamic Frequency Updates: Change the frequency of a running wave "on the fly" for effects like sirens or frequency sweeps.
 
+## Use Cases
+
+* Triggering devices, such as a laser so that a very specific number of laser pulses are generated.
+    * This is useful for laser etching.
+* Motion control, particularly for precise stepper motor movement.
+    * The frequency is dynamic, this opens up the ability to do complex acceleration curves or a simple ramp.
+    * Discrete pulses can be sent for precise relative movement.
+* Tone generation.
+    * Can sweep between 1 - 20,000Hz (Up to half the system clock if necessary).
+* System clocks.
+* Intermediary board, you can convert any measurement into a frequency and pass it to a PLC.
+
 ## Hardware Support & Pinout
 
 This library is board-aware and will automatically use the correct timer for the pin you select.
