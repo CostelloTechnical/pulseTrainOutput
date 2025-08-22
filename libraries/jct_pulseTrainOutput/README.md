@@ -91,7 +91,6 @@ void loop() {
 A brief overview of the main public functions.
 
 * pulseTrainOutput(uint8_t pin)  :  Constructor. Creates a generator object and sets up the hardware for a specific pin.
-* isValid()  :  Returns true if the pin chosen in the constructor is valid.
 * generate(frequency, mode, pulses) :  Starts a pulse train. mode can be DISCRETE or CONTINUOUS. pulses is only used in DISCRETE mode.
 * updateFrequency(newFrequency) :  Updates the frequency if opperating in continuous mode.
 * stop()  :  Immediately stops the pulse train and forces the pin LOW.
