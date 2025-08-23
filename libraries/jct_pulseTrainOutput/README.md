@@ -29,22 +29,22 @@ This library allows for direct control of the AVR microcontroller's hardware tim
 
 This library is board-aware and will automatically use the correct timer for the pin you select.
 
-### Arduino Uno
+### Arduino Uno and Nano
 
-| Pin  | Timer  | Channel | Notes                    |
-| :--- | :----- | :------- | :----------------------- |
-| 9  | Timer1 | A        | 16-bit, high resolution. |
-| 11 | Timer2 | A        | 8-bit.                   |
+| Pin  | Timer  | Channel | Bitness | Min Hz | Max Hz |
+| :--- | :----- | :-------| :------ | :----- | :----- |
+| 9    | Timer1 | A       | 16-bit. | 1 Hz   | 8 MHz  |
+| 11   | Timer2 | A       | 8-bit.  | 31 Hz  | 8 MHz  |
 
 ### Arduino Mega 2560
 
-| Pin  | Timer  | Channel | Notes     |
-| :--- | :----- | :------- | :-------- |
-| 11 | Timer1 | A        | 16-bit.   |
-| 10 | Timer2 | A        | 8-bit.    |
-| 5  | Timer3 | A        | 16-bit.   |
-| 6  | Timer4 | A        | 16-bit.   |
-| 46 | Timer5 | A        | 16-bit.   |
+| Pin  | Timer  | Channel  | Bitness   | Min Hz | Max Hz |
+| :--- | :----- | :------- | :-------  | :----- | :----- |
+| 11   | Timer1 | A        | 16-bit.   | 1 Hz   | 8 MHz  |
+| 10   | Timer2 | A        | 8-bit.    | 31 Hz  | 8 MHz  |
+| 5    | Timer3 | A        | 16-bit.   | 1 Hz   | 8 MHz  |
+| 6    | Timer4 | A        | 16-bit.   | 1 Hz   | 8 MHz  |
+| 46   | Timer5 | A        | 16-bit.   | 1 Hz   | 8 MHz  |
 
 Note: Timer0 pins and Channel B/C pins are currently unsupported to maintain simplicity and avoid conflicts with core Arduino timing functions like millis() and delay().
 
