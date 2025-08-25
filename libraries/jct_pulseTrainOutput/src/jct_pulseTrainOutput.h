@@ -49,12 +49,13 @@ enum pulseModes {
 };
 
 enum errors{
-  NO_ERROR = 0,       // No error.
-  INVALID_PIN = 1,    // There was an invalid pin input in the constructor. Check the allowable pins for the microcontroller.
-  ZERO_HZ = 2,        // 0Hz is not an allowable frequency.
-  ACTIVE = 3,         // The timer is currently generating.
-  INVALID_MODE = 4,   // An invalid mode was selected.
-  FREQUENCY_HIGH = 5  // The frequency is out of range.
+  NO_ERROR = 0,        // No error.
+  INVALID_PIN = 1,     // There was an invalid pin input in the constructor. Check the allowable pins for the microcontroller.
+  ZERO_HZ = 2,         // 0Hz is not an allowable frequency.
+  ACTIVE = 3,          // The timer is currently generating.
+  INVALID_MODE = 4,    // An invalid mode was selected.
+  FREQUENCY_HIGH = 5,  // The frequency is out of range.
+  ZERO_PULSES = 6      // Zero is not an allowable number of pulses.
 };
 
 /**

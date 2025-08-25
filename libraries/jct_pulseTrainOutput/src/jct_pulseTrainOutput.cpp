@@ -216,6 +216,7 @@ bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pu
         _error = _timerId == TID_INVALID ? INVALID_PIN : _error;
         _error = mode > CONTINUOUS ? INVALID_MODE : _error;
         _error = mode <= STOP ? INVALID_MODE : _error;
+        _error = (pulses == 0 && mode == DISCRETE) ? ZERO_PULSES : _error;
         return false;
     }
 
@@ -224,7 +225,7 @@ bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pu
     if (_pulseMode == DISCRETE) {
         // For N high pulses finishing LOW, we need 2*N total toggles.
         _pulsesToGenerate = pulses * 2;
-        _pulseCounter = 0;
+        _pulseCounter = _pulsesToGenerate;
     }
 
     uint32_t ocrValue;
@@ -391,8 +392,8 @@ void pulseTrainOutput::stop() {
  */
 void pulseTrainOutput::handleInterrupt() {
     if (_pulseMode == DISCRETE) {
-        _pulseCounter++;
-        if (_pulseCounter >= _pulsesToGenerate) {
+        _pulseCounter--;
+        if (_pulseCounter == 0) {
             stop();
         }
     }
