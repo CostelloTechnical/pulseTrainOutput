@@ -29,7 +29,7 @@ This library allows for direct control of the AVR microcontroller's hardware tim
 
 This library is board-aware and will automatically use the correct timer for the pin you select.
 
-### Arduino Uno and Nano
+### Arduino Uno, Nano and Pro Mini
 
 | Pin  | Timer  | Channel | Bitness | Min Hz | Max Hz |
 | :--- | :----- | :-------| :------ | :----- | :----- |
@@ -50,13 +50,13 @@ Note: Timer0 pins and Channel B/C pins are currently unsupported to maintain sim
 
 ## Basic Usage (Quick Start)
 
-A minimal example to generate a continuous 1 kHz square wave on Pin 9 of an Arduino Uno.
+A minimal example to generate a continuous 1 kHz square wave on Pin 11. Compatible with Uno or Mega.
 
 ```cpp
 #include "jct_pulseTrainOutput.h"
 
 // Create an object for a timer-enabled pin.
-pulseTrainOutput pto(9);
+pulseTrainOutput pto(11);
 
 void setup() {
   // Start a continuous 1000 Hz wave.
@@ -68,16 +68,16 @@ void loop() {
 }
 ```
 
-A minimal example to generate a discrete 10 kHz 4 pulse square wave on Pin 9 of an Arduino Uno.
+A minimal example to generate a discrete 10 kHz 4 pulse square wave on Pin 11. Compatible with Uno or Mega.
 
 ```cpp
 #include "jct_pulseTrainOutput.h"
 
 // Create an object for a timer-enabled pin.
-pulseTrainOutput pto(9);
+pulseTrainOutput pto(11);
 
 void setup() {
-  // Generate 4 discrete pulses at 10 kHz from pin 11
+  // Generate 4 discrete pulses at 10 kHz.
   pto.generate(10000, DISCRETE, 4);
 }
 
