@@ -2,8 +2,8 @@
 
 FspTimer gpt_timer;
 
-int _pin = 5;
-uint32_t counter = 5;
+int _pin = 0;
+uint32_t counter = 4;
 bool _enabled;
 bool _is_agt;
 TimerPWMChannel_t _pwm_channel;
@@ -12,9 +12,17 @@ uint8_t timer_channel;
 // This is your ISR/callback function.
 void my_pwm_callback(timer_callback_args_t *p_args) {
   // We check for the end-of-cycle event, just like before.
-  counter--;
   if (counter == 0) {
-    gpt_timer.end();
+    gpt_timer.stop();
+  }
+
+  if (counter > 0) {
+    counter--;
+    if (counter == 0) {
+      // Instead of stopping, we command the PWM to be silent for the next full cycle.
+      // This holds the output pin low, creating our "final off cycle".
+      gpt_timer.set_duty_cycle(0, _pwm_channel);
+    }
   }
 }
 
@@ -42,10 +50,11 @@ bool cfg_pin(int max_index) {
 }
 
 void setup() {
+
   int max_index = PINS_COUNT;
   cfg_pin(max_index);
 
-  gpt_timer.begin(TIMER_MODE_PWM, _is_agt, timer_channel, 1000, STANDARD_DUTY_CYCLE_PERC, my_pwm_callback);
+  gpt_timer.begin(TIMER_MODE_PWM, _is_agt, timer_channel, 200000, STANDARD_DUTY_CYCLE_PERC, my_pwm_callback);
   //gpt_timer.begin(TIMER_MODE_PWM, _is_agt, timer_channel, STANDARD_PWM_FREQ_HZ, STANDARD_DUTY_CYCLE_PERC);
   gpt_timer.setup_overflow_irq();
   gpt_timer.add_pwm_extended_cfg();
