@@ -19,35 +19,27 @@ pulseTrainOutput* pulseTrainOutput::_instances[10] = {nullptr};
 // Define a unique callback for each timer channel. Each callback knows its channel
 // number and calls the appropriate instance's handler. This bypasses the p_context issue.
 void pulseTrainOutput::r4_gpt_callback_0(timer_callback_args_t *) { 
-    Serial.println("r4_gpt_callback_0");
     if (_instances[0]) _instances[0]->handleInterrupt(); 
 }
 void pulseTrainOutput::r4_gpt_callback_1(timer_callback_args_t *) { 
-    Serial.println("r4_gpt_callback_1");
     if (_instances[1]) _instances[1]->handleInterrupt(); 
 }
 void pulseTrainOutput::r4_gpt_callback_2(timer_callback_args_t *) {
-    Serial.println("r4_gpt_callback_2");
     if (_instances[2]) _instances[2]->handleInterrupt();
 }
 void pulseTrainOutput::r4_gpt_callback_3(timer_callback_args_t *) {
-    Serial.println("r4_gpt_callback_3");
     if (_instances[3]) _instances[3]->handleInterrupt();
 }
 void pulseTrainOutput::r4_gpt_callback_4(timer_callback_args_t *) {
-    Serial.println("r4_gpt_callback_4");
     if (_instances[4]) _instances[4]->handleInterrupt();
 }
 void pulseTrainOutput::r4_gpt_callback_5(timer_callback_args_t *) {
-    Serial.println("r4_gpt_callback_5");
     if (_instances[5]) _instances[5]->handleInterrupt();
 }
 void pulseTrainOutput::r4_gpt_callback_6(timer_callback_args_t *) {
-    Serial.println("r4_gpt_callback_6");
     if (_instances[6]) _instances[6]->handleInterrupt();
 }
 void pulseTrainOutput::r4_gpt_callback_7(timer_callback_args_t *) {
-    Serial.println("r4_gpt_callback_7");
     if (_instances[7]) _instances[7]->handleInterrupt();
 }
 
@@ -186,6 +178,7 @@ bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pu
         return false;
     }
     cli();
+
     *_tccrA = 0;
     *_tccrB = 0;
     *_ocr = ocrValue;
@@ -210,7 +203,21 @@ bool pulseTrainOutput::updateFrequency(uint32_t newFrequency) {
         return false;
     }
 #if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
-    return _timer.set_frequency(newFrequency);
+    bool success = _timer.set_frequency(newFrequency);
+    if (success) {
+        // IMPORTANT: The FspTimer::set_frequency function does not automatically
+        // update the duty cycle to match the new period. We must manually
+        // re-apply our desired 50% duty cycle. This forces the library to
+        // recalculate the compare value based on the new period.
+        uint32_t period_counts = _timer.get_period_raw(); 
+
+        // Calculate the new duty cycle for 50%
+        uint32_t duty_counts = period_counts / 2;
+
+        // Set the new duty cycle in raw counts
+        success = _timer.set_duty_cycle(duty_counts, _pwm_channel);
+    }
+    return success;
 #else
     uint32_t ocrValue;
     uint8_t prescalerBits;
@@ -227,13 +234,15 @@ bool pulseTrainOutput::updateFrequency(uint32_t newFrequency) {
 #endif
 }
 
+#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
 void pulseTrainOutput::stop() {
     if (!_isRunning) return;
-#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
-    _timer.set_duty_cycle(0, _pwm_channel);
     _timer.stop();
-    _timer.close();
+    _timer.end();
+    _isRunning = false;
+}
 #else
+void pulseTrainOutput::stop() {
     *_tccrA &= ~_comStopMask;
     *_outputPort &= ~_pinBitMask;
     switch (_timerId) {
@@ -243,19 +252,37 @@ void pulseTrainOutput::stop() {
             *_tccrB &= ~(_BV(CS22) | _BV(CS21) | _BV(CS20)); break;
     }
     *_timsk &= ~(1 << _ocieBit);
-#endif
     _isRunning = false;
 }
+#endif
 
+#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
 void pulseTrainOutput::handleInterrupt() {
-    Serial.println("handleInterrupt");
-    if (_pulseMode == DISCRETE) {
-        _pulseCounter--;
-        if (_pulseCounter == 0) {
-            stop();
+        if (_pulseMode == DISCRETE) {
+            if (_pulseCounter == 0) {
+                stop();
+            }
+            if (_pulseCounter > 0) {
+                _pulseCounter--;
+                if (_pulseCounter == 0) {
+                    // Instead of stopping, we command the PWM to be silent for the next full cycle.
+                    // This holds the output pin low, creating our "final off cycle".
+                    _timer.set_duty_cycle(0, _pwm_channel);
+                }
+            }
         }
     }
-}
+#else
+void pulseTrainOutput::handleInterrupt() {
+        if (_pulseMode == DISCRETE) {
+            _pulseCounter--;
+            if (_pulseCounter == 0) {
+                stop();
+            }
+        }
+    }
+#endif
+
 
 bool pulseTrainOutput::isRunning() const{
     return _isRunning;
