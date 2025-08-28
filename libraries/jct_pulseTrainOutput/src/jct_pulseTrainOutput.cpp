@@ -276,7 +276,22 @@ void pulseTrainOutput::handleInterrupt() {
 void pulseTrainOutput::handleInterrupt() {
         if (_pulseMode == DISCRETE) {
             _pulseCounter--;
-            if (_pulseCounter == 0) {
+
+            if (_pulseCounter == 1) {
+                // This is the interrupt for the RISING edge of the very last pulse.
+                // We reconfigure the timer's NEXT action from "Toggle" to "Clear" (Force LOW).
+                // This must be done in a single, atomic operation to prevent a glitch.
+                
+                uint8_t currentTCCRA = *_tccrA;
+                // First, clear the existing COM bits (both 1 and 0)
+                currentTCCRA &= ~(_BV(COM1A1) | _BV(COM1A0));
+                // Then, set the new COM bits for "Clear on Compare Match" (COMxA1=1, COMxA0=0)
+                currentTCCRA |= _BV(COM1A1);
+                // Write the new configuration back to the register in one operation.
+                *_tccrA = currentTCCRA;
+
+            }//
+             else if (_pulseCounter == 0) {
                 stop();
             }
         }
