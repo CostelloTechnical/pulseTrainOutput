@@ -6,7 +6,55 @@
  * pulse trains on various output pins of Arduino Uno, Mega, and R4 boards.
  * @version 1.5
  * @date 2025-08-27
- */
+
+ ==============================================================================
+                                  DISCLAIMER
+  ==============================================================================
+
+  This software is provided "as is", without warranty of any kind, express or
+  implied, including but not to the warranties of merchantability,
+  fitness for a particular purpose and noninfringement. In no event shall the
+  authors or copyright holders be liable for any claim, damages or other
+  liability, whether in an action of contract, tort or otherwise, arising from,
+  out of or in connection with the software or the use or other dealings in the
+  software.
+
+  ==============================================================================
+                              PERMISSION TO USE
+  ==============================================================================
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so.
+
+  It is highly encouraged that if you find this library useful, you provide
+  attribution back to the original author.
+
+    ==============================================================================
+                            INFORMATION ON USE
+  ==============================================================================
+
+  UNO R3
+    Acceptable pins: D9 and D11.
+    The minimum frequency on D11 is 31Hz. 16MHz / (2 * 1024 * 256) ≈ 30.5 Hz.
+    The maximum usable discrete frequency is 60kHz with one channel. With two 
+    channels that is lowered to 30kHz per channel. This is a fundamental hardware
+    limit. You can however run one channel in DISCRETE at 60kHz and the other at
+    up to 8MHz in CONTINUOUS with no problems (other than 8MHz being a bit messy).
+ 
+  MEGA
+    Acceptable pins: D5, D6, D10, D11 and D46.
+    The minimum frequency on D10 is 31Hz. 16MHz / (2 * 1024 * 256) ≈ 30.5 Hz.
+    The maximum usable discrete frequency is 55kHz with one channel (at least
+    on my Mega). With all 5 timers on at the same time I can only generate 7.5kHz
+    reliably. All timers can generate up to 8MHz simultaneously.
+
+  UNO R4
+    TBC....
+*/
 #include "jct_pulseTrainOutput.h"
 
 // Initialize the static array of pointers.
