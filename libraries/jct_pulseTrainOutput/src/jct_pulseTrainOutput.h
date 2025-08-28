@@ -3,9 +3,9 @@
  * @author CostelloTechnical
  * @brief Header file for the jct_pulseTrainOutput library.
  * This library provides a C++ class to generate precise, hardware-timed
- * pulse trains on various output pins of Arduino Uno and Mega boards.
- * @version 1.2
- * @date 2025-08-21
+ * pulse trains on various output pins of Arduino Uno, Mega, and R4 boards.
+ * @version 1.3
+ * @date 2025-08-27
  
  
   ==============================================================================
@@ -29,6 +29,7 @@
   in the Software without restriction, including without limitation the rights
   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
   copies of the Software, and to permit persons to whom the Software is
+
   furnished to do so.
 
   It is highly encouraged that if you find this library useful, you provide
@@ -41,6 +42,11 @@
 #ifndef JCT_PULSETRAINOUTPUT_H
 #define JCT_PULSETRAINOUTPUT_H
 #include <Arduino.h>
+
+// Platform-specific includes
+#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
+#include "FspTimer.h"
+#endif
 
 enum pulseModes {
     STOP = 0,       // Not used, represents the stopped state.
@@ -67,6 +73,11 @@ enum timerIds {
     TID_TIMER3,
     TID_TIMER4,
     TID_TIMER5,
+    // R4 Timers can have higher channel numbers
+    TID_TIMER6,
+    TID_TIMER7,
+    TID_TIMER8,
+    TID_TIMER9,
     TID_INVALID
 };
 
@@ -80,9 +91,9 @@ class pulseTrainOutput{
   public:
     /**
      * @brief An array of static pointers, one for each timer, allowing the global C-style
-     * ISRs to find and call the correct C++ object instance.
+     * ISRs to find and call the correct C++ object instance. Sized for R4 compatibility.
      */
-    static pulseTrainOutput* _instances[5];
+    static pulseTrainOutput* _instances[10];
 
     /**
      * @brief Construct a new pulseTrainOutput object.
@@ -103,7 +114,7 @@ class pulseTrainOutput{
     /**
      * @brief Instantly updates the frequency, changing the prescaler if necessary.
      * This may cause a minor timing glitch (a single malformed pulse) at the moment
-     * of the prescaler change.
+     * of the prescaler change on AVR boards.
      * @param newFrequency The new frequency in Hertz.
      * @return true if the frequency was updated successfully.
      * @return false if the timer is not running or the frequency is out of range.
@@ -128,14 +139,35 @@ class pulseTrainOutput{
     uint8_t getError() const;
 
      /**
-     * @brief The C++ interrupt handler method. This is called by the global ISR trampolines.
+     * @brief The C++ interrupt handler method. This is called by the global ISR trampolines or R4 callback.
      * It contains the logic for counting discrete pulses.
      */
     void handleInterrupt();
 
+    #if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
+    /**
+     * @brief Static callback functions, one for each possible GPT timer channel on the R4.
+     */
+    static void r4_gpt_callback_0(timer_callback_args_t *p_args);
+    static void r4_gpt_callback_1(timer_callback_args_t *p_args);
+    static void r4_gpt_callback_2(timer_callback_args_t *p_args);
+    static void r4_gpt_callback_3(timer_callback_args_t *p_args);
+    static void r4_gpt_callback_4(timer_callback_args_t *p_args);
+    static void r4_gpt_callback_5(timer_callback_args_t *p_args);
+    static void r4_gpt_callback_6(timer_callback_args_t *p_args);
+    static void r4_gpt_callback_7(timer_callback_args_t *p_args);
+#endif
+
+#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
+    /**
+     * @brief The static callback function for all R4 timer events.
+     */
+    static void r4_master_callback(timer_callback_args_t *p_args);
+#endif
+
 private:
     /**
-     * @brief Private helper function to calculate the optimal OCR value and prescaler settings for a given frequency.
+     * @brief Private helper function to calculate the optimal OCR value and prescaler settings for a given frequency (AVR only).
      * @param frequency The target frequency in Hertz.
      * @param ocrValue A reference to a variable where the calculated OCR value will be stored.
      * @param prescalerBits A reference to a variable where the calculated TCCRB register bits for the prescaler will be stored.
@@ -147,9 +179,16 @@ private:
     uint8_t _pin;                         // The Arduino pin number this object controls.
     timerIds _timerId;                    // The hardware timer this instance is mapped to (e.g., TID_TIMER1).
     bool _is16bit;                        // Flag to handle 8-bit vs 16-bit timer differences.
-    uint8_t _error;                       // Holds the most recinet error.
+    uint8_t _error;                       // Holds the most recent error.
 
-
+#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
+    // --- UNO R4 Specific Members ---
+    FspTimer _timer;                      // R4 timer object from the FspTimer library.
+    bool _is_agt;                         // Flag for AGT vs GPT timer type.
+    TimerPWMChannel_t _pwm_channel;       // The specific PWM channel (A or B) for the pin.
+    uint8_t _timer_channel;               // The numeric channel of the timer.
+#else
+    // --- AVR Specific Members ---
     // --- Pointers to Hardware Registers ---
     // These are populated by the constructor based on the chosen pin.
     volatile uint8_t* _tccrA;             // Pointer to the Timer/Counter Control Register A (e.g., TCCR1A). Controls pin action (COM bits) and mode (WGM bits).
@@ -163,14 +202,14 @@ private:
     // These are determined in the constructor to make the generate() and stop() methods generic.
     uint8_t _ocieBit;                     // The specific interrupt enable bit for this timer/channel (e.g., OCIE1A).
     uint8_t _comStopMask;                 // The bitmask used to disconnect the pin from the timer.
-
+    uint8_t _pinBitMask;                  // The bitmask for this pin within its PORT (e.g., _BV(PB5)).
+#endif
 
     // --- State variables ---
-    volatile uint32_t _pulseCounter;      // Tracks the number of pulses generated in DISCRETE mode. Must be volatile as it's modified in an ISR.
-    volatile uint32_t _pulsesToGenerate;  // The target number of pulses in DISCRETE mode. Volatile as it's read in an ISR.
+    volatile uint32_t _pulseCounter;      // Tracks the number of pulses/toggles generated. Must be volatile as it's modified in an ISR.
+    volatile uint32_t _pulsesToGenerate;  // The target number of pulses/toggles. Volatile as it's read in an ISR.
     volatile uint8_t _pulseMode;          // The current operating mode. Volatile as it's read in an ISR.
     volatile bool _isRunning;             // The current running state. Volatile as it's modified in an ISR.
-    uint8_t _pinBitMask;                  // The bitmask for this pin within its PORT (e.g., _BV(PB5)).
 
 };
 

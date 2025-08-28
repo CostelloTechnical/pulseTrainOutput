@@ -1,215 +1,123 @@
 /**
  * @file jct_pulseTrainOutput.cpp
  * @author CostelloTechnical
- * @brief Header file for the jct_pulseTrainOutput library.
+ * @brief Source file for the jct_pulseTrainOutput library.
  * This library provides a C++ class to generate precise, hardware-timed
- * pulse trains on various output pins of Arduino Uno and Mega boards.
- * @version 1.2
- * @date 2025-08-21
- 
-  ==============================================================================
-                                  DISCLAIMER
-  ==============================================================================
-
-  This software is provided "as is", without warranty of any kind, express or
-  implied, including but not to the warranties of merchantability,
-  fitness for a particular purpose and noninfringement. In no event shall the
-  authors or copyright holders be liable for any claim, damages or other
-  liability, whether in an action of contract, tort or otherwise, arising from,
-  out of or in connection with the software or the use or other dealings in the
-  software.
-
-  ==============================================================================
-                              PERMISSION TO USE
-  ==============================================================================
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so.
-
-  It is highly encouraged that if you find this library useful, you provide
-  attribution back to the original author.
-
-  ==============================================================================
-                            INFORMATION ON USE
-  ==============================================================================
-
-  UNO
-    Acceptable pins: D9 and D11.
-    The minimum frequency on D11 is 31Hz. 16MHz / (2 * 1024 * 256) ≈ 30.5 Hz.
-    The maximum usable discrete frequency is 60kHz with one channel. With two 
-    channels that is lowered to 30kHz per channel. This is a fundamental hardware
-    limit. You can however run one channel in DISCRETE at 60kHz and the other at
-    up to 8MHz in CONTINUOUS with no problems (other than 8MHz being a bit messy).
- 
-  MEGA
-    Acceptable pins: D5, D6, D10, D11 and D46.
-    The minimum frequency on D10 is 31Hz. 16MHz / (2 * 1024 * 256) ≈ 30.5 Hz.
-    The maximum usable discrete frequency is 55kHz with one channel (at least
-    on my Mega). With all 5 timers on at the same time I can only generate 7.5kHz
-    reliably. All timers can generate up to 8MHz simultaneously.
-*/
+ * pulse trains on various output pins of Arduino Uno, Mega, and R4 boards.
+ * @version 1.5
+ * @date 2025-08-27
+ */
 #include "jct_pulseTrainOutput.h"
-// Initialize the static array of pointers. This is crucial for the ISR trampolines.
-pulseTrainOutput* pulseTrainOutput::_instances[5] = {nullptr, nullptr, nullptr, nullptr, nullptr};
 
-// --- ISR Trampolines ---
-// These are the global, C-style Interrupt Service Routines.
-// The hardware can only call these simple functions. Their only job is to
-// act as a "trampoline" to bounce the execution to the correct C++ object's
-// handleInterrupt() method.
+// Initialize the static array of pointers.
+pulseTrainOutput* pulseTrainOutput::_instances[10] = {nullptr};
 
-ISR(TIMER1_COMPA_vect) {
-    if (pulseTrainOutput::_instances[TID_TIMER1] != nullptr) {
-        pulseTrainOutput::_instances[TID_TIMER1]->handleInterrupt();
-    }
+#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
+
+// --- UNO R4 IMPLEMENTATION ---
+
+// Define a unique callback for each timer channel. Each callback knows its channel
+// number and calls the appropriate instance's handler. This bypasses the p_context issue.
+void pulseTrainOutput::r4_gpt_callback_0(timer_callback_args_t *) { 
+    if (_instances[0]) _instances[0]->handleInterrupt(); 
+}
+void pulseTrainOutput::r4_gpt_callback_1(timer_callback_args_t *) { 
+    if (_instances[1]) _instances[1]->handleInterrupt(); 
+}
+void pulseTrainOutput::r4_gpt_callback_2(timer_callback_args_t *) {
+    if (_instances[2]) _instances[2]->handleInterrupt();
+}
+void pulseTrainOutput::r4_gpt_callback_3(timer_callback_args_t *) {
+    if (_instances[3]) _instances[3]->handleInterrupt();
+}
+void pulseTrainOutput::r4_gpt_callback_4(timer_callback_args_t *) {
+    if (_instances[4]) _instances[4]->handleInterrupt();
+}
+void pulseTrainOutput::r4_gpt_callback_5(timer_callback_args_t *) {
+    if (_instances[5]) _instances[5]->handleInterrupt();
+}
+void pulseTrainOutput::r4_gpt_callback_6(timer_callback_args_t *) {
+    if (_instances[6]) _instances[6]->handleInterrupt();
+}
+void pulseTrainOutput::r4_gpt_callback_7(timer_callback_args_t *) {
+    if (_instances[7]) _instances[7]->handleInterrupt();
 }
 
-ISR(TIMER2_COMPA_vect) {
-    if (pulseTrainOutput::_instances[TID_TIMER2] != nullptr) {
-        pulseTrainOutput::_instances[TID_TIMER2]->handleInterrupt();
-    }
-}
+// ** FIX #1: Use the explicit function pointer type instead of the inaccessible 'timer_callback_t' typedef. **
+// This creates an array of pointers to functions that return void and accept a timer_callback_args_t*.
+static void (*r4_callbacks[])(timer_callback_args_t*) = {
+  pulseTrainOutput::r4_gpt_callback_0,
+  pulseTrainOutput::r4_gpt_callback_1,
+  pulseTrainOutput::r4_gpt_callback_2,
+  pulseTrainOutput::r4_gpt_callback_3,
+  pulseTrainOutput::r4_gpt_callback_4,
+  pulseTrainOutput::r4_gpt_callback_5,
+  pulseTrainOutput::r4_gpt_callback_6,
+  pulseTrainOutput::r4_gpt_callback_7
+};
 
-#if defined(__AVR_ATmega2560__) // Only compile these for the Mega
-    ISR(TIMER3_COMPA_vect) {
-        if (pulseTrainOutput::_instances[TID_TIMER3] != nullptr) {
-            pulseTrainOutput::_instances[TID_TIMER3]->handleInterrupt();
-        }
-    }
-    ISR(TIMER4_COMPA_vect) {
-        if (pulseTrainOutput::_instances[TID_TIMER4] != nullptr) {
-            pulseTrainOutput::_instances[TID_TIMER4]->handleInterrupt();
-        }
-    }
-    ISR(TIMER5_COMPA_vect) {
-        if (pulseTrainOutput::_instances[TID_TIMER5] != nullptr) {
-            pulseTrainOutput::_instances[TID_TIMER5]->handleInterrupt();
-        }
-    }
+#else
+
+// --- AVR IMPLEMENTATION (UNO R3, MEGA, etc.) ---
+
+ISR(TIMER1_COMPA_vect) { if (pulseTrainOutput::_instances[TID_TIMER1] != nullptr) { pulseTrainOutput::_instances[TID_TIMER1]->handleInterrupt(); } }
+ISR(TIMER2_COMPA_vect) { if (pulseTrainOutput::_instances[TID_TIMER2] != nullptr) { pulseTrainOutput::_instances[TID_TIMER2]->handleInterrupt(); } }
+#if defined(__AVR_ATmega2560__)
+ISR(TIMER3_COMPA_vect) { if (pulseTrainOutput::_instances[TID_TIMER3] != nullptr) { pulseTrainOutput::_instances[TID_TIMER3]->handleInterrupt(); } }
+ISR(TIMER4_COMPA_vect) { if (pulseTrainOutput::_instances[TID_TIMER4] != nullptr) { pulseTrainOutput::_instances[TID_TIMER4]->handleInterrupt(); } }
+ISR(TIMER5_COMPA_vect) { if (pulseTrainOutput::_instances[TID_TIMER5] != nullptr) { pulseTrainOutput::_instances[TID_TIMER5]->handleInterrupt(); } }
 #endif
 
-/**
- * @brief Construct a new pulseTrainOutput object.
- * This constructor performs all the necessary board- and pin-specific hardware mapping.
- * It identifies the correct timer, registers, and configuration bits for the given pin
- * and stores them in the object's member variables.
- * @param pin The Arduino digital pin to control.
- */
+#endif // End of platform-specific ISR/callback section
+
+
 pulseTrainOutput::pulseTrainOutput(uint8_t pin) {
     _pin = pin;
-    _timerId = TID_INVALID; // Default to invalid
+    _timerId = TID_INVALID; 
     _isRunning = false;
     _error = 0;
-        #if defined(__AVR_ATmega2560__) // Arduino Mega
+
+#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
+    auto pin_cgf = getPinCfgs(_pin, PIN_CFG_REQ_PWM);
+    if (pin_cgf[0] == 0) {
+        _error = INVALID_PIN;
+        return;
+    }
+    _timer_channel = GET_CHANNEL(pin_cgf[0]);
+    _is_agt = IS_PIN_AGT_PWM(pin_cgf[0]);
+    _pwm_channel = IS_PWM_ON_A(pin_cgf[0]) ? CHANNEL_A : CHANNEL_B;
+      R_IOPORT_PinCfg(&g_ioport_ctrl, g_pin_cfg[_pin].pin, (uint32_t)(IOPORT_CFG_PERIPHERAL_PIN | (_is_agt ? IOPORT_PERIPHERAL_AGT : IOPORT_PERIPHERAL_GPT1)));
+    _timerId = (timerIds)_timer_channel;
+    if (_timerId != TID_INVALID) {
+      _instances[_timer_channel] = this;
+    } else {
+      _error = INVALID_PIN;
+    }
+#else
+    #if defined(__AVR_ATmega2560__)
         switch (_pin) {
-            case 11: // Timer 1 (16-bit), Channel A
-                _timerId = TID_TIMER1;
-                _is16bit = true;
-                _tccrA = &TCCR1A; // Control Register A: Controls pin action (COM bits)
-                _tccrB = &TCCR1B; // Control Register B: Controls mode (WGM bits) and clock speed (CS bits)
-                _timsk = &TIMSK1; // Interrupt Mask Register: Enables interrupts for this timer
-                _ocr = &OCR1A;    // Output Compare Register A: The target value for the counter
-                _ocieBit = OCIE1A;// Interrupt Enable bit for channel A
-                _outputPort = &PORTB; // The physical port for this pin
-                _pinBitMask = _BV(PB5); // The bitmask for this pin within the port
-                _comStopMask = _BV(COM1A1) | _BV(COM1A0); // Mask to clear the COM bits and disconnect the pin
-                break;
-            case 10: // Timer 2, Channel A
-                _timerId = TID_TIMER2;
-                _is16bit = false;
-                _tccrA = &TCCR2A;
-                _tccrB = &TCCR2B;
-                _timsk = &TIMSK2;
-                _ocr = (volatile uint16_t*)&OCR2A;
-                _ocieBit = OCIE2A;
-                _outputPort = &PORTB;
-                _pinBitMask = _BV(PB4);
-                _comStopMask = _BV(COM2A1) | _BV(COM2A0);
-                break;
-            case 5: // Timer 3, Channel A
-                _timerId=TID_TIMER3;
-                _is16bit=true;
-                _tccrA=&TCCR3A;
-                _tccrB=&TCCR3B;
-                _timsk=&TIMSK3;
-                _ocr=&OCR3A;
-                _ocieBit=OCIE3A;
-                _outputPort=&PORTE;
-                _pinBitMask=_BV(PE3);
-                _comStopMask=_BV(COM3A1)|_BV(COM3A0);
-                break;
-            case 6:// Timer 4, Channel A
-                _timerId=TID_TIMER4;
-                _is16bit=true;
-                _tccrA=&TCCR4A;
-                _tccrB=&TCCR4B;
-                _timsk=&TIMSK4;
-                _ocr=&OCR4A;
-                _ocieBit=OCIE4A;
-                _outputPort=&PORTH;
-                _pinBitMask=_BV(PH3);
-                _comStopMask=_BV(COM4A1)|_BV(COM4A0);
-                break;
-            case 46: // Timer 5, Channel A
-                _timerId=TID_TIMER5;
-                _is16bit=true;
-                _tccrA=&TCCR5A;
-                _tccrB=&TCCR5B;
-                _timsk=&TIMSK5;
-                _ocr=&OCR5A;
-                _ocieBit=OCIE5A;
-                _outputPort=&PORTL;
-                _pinBitMask=_BV(PL3);
-                _comStopMask=_BV(COM5A1)|_BV(COM5A0);
-                break;
+            case 11: _timerId = TID_TIMER1; _is16bit = true; _tccrA = &TCCR1A; _tccrB = &TCCR1B; _timsk = &TIMSK1; _ocr = &OCR1A; _ocieBit = OCIE1A; _outputPort = &PORTB; _pinBitMask = _BV(PB5); _comStopMask = _BV(COM1A1) | _BV(COM1A0); break;
+            case 10: _timerId = TID_TIMER2; _is16bit = false; _tccrA = &TCCR2A; _tccrB = &TCCR2B; _timsk = &TIMSK2; _ocr = (volatile uint16_t*)&OCR2A; _ocieBit = OCIE2A; _outputPort = &PORTB; _pinBitMask = _BV(PB4); _comStopMask = _BV(COM2A1) | _BV(COM2A0); break;
+            case 5: _timerId=TID_TIMER3; _is16bit=true; _tccrA=&TCCR3A; _tccrB=&TCCR3B; _timsk=&TIMSK3; _ocr=&OCR3A; _ocieBit=OCIE3A; _outputPort=&PORTE; _pinBitMask=_BV(PE3); _comStopMask=_BV(COM3A1)|_BV(COM3A0); break;
+            case 6: _timerId=TID_TIMER4; _is16bit=true; _tccrA=&TCCR4A; _tccrB=&TCCR4B; _timsk=&TIMSK4; _ocr=&OCR4A; _ocieBit=OCIE4A; _outputPort=&PORTH; _pinBitMask=_BV(PH3); _comStopMask=_BV(COM4A1)|_BV(COM4A0); break;
+            case 46: _timerId=TID_TIMER5; _is16bit=true; _tccrA=&TCCR5A; _tccrB=&TCCR5B; _timsk=&TIMSK5; _ocr=&OCR5A; _ocieBit=OCIE5A; _outputPort=&PORTL; _pinBitMask=_BV(PL3); _comStopMask=_BV(COM5A1)|_BV(COM5A0); break;
         }
     #else // Arduino Uno, Nano, etc.
         switch (_pin) {
-            case 9: // Timer 1, Channel A
-                _timerId=TID_TIMER1;
-                _is16bit=true;
-                _tccrA=&TCCR1A;
-                _tccrB=&TCCR1B;
-                _timsk=&TIMSK1;
-                _ocr=&OCR1A;
-                _ocieBit=OCIE1A;
-                _outputPort=&PORTB;
-                _pinBitMask=_BV(PB1);
-                _comStopMask=_BV(COM1A1)|_BV(COM1A0);
-                break;
-            case 11:  // Timer 2, Channel A
-                _timerId=TID_TIMER2;
-                _is16bit=false;
-                _tccrA=&TCCR2A;
-                _tccrB=&TCCR2B;
-                _timsk=&TIMSK2;
-                _ocr=(volatile uint16_t*)&OCR2A;
-                _ocieBit=OCIE2A;
-                _outputPort=&PORTB;
-                _pinBitMask=_BV(PB3);
-                _comStopMask=_BV(COM2A1)|_BV(COM2A0);
-                break;
+            case 9: _timerId=TID_TIMER1; _is16bit=true; _tccrA=&TCCR1A; _tccrB=&TCCR1B; _timsk=&TIMSK1; _ocr=&OCR1A; _ocieBit=OCIE1A; _outputPort=&PORTB; _pinBitMask=_BV(PB1); _comStopMask=_BV(COM1A1)|_BV(COM1A0); break;
+            case 11: _timerId=TID_TIMER2; _is16bit=false; _tccrA=&TCCR2A; _tccrB=&TCCR2B; _timsk=&TIMSK2; _ocr=(volatile uint16_t*)&OCR2A; _ocieBit=OCIE2A; _outputPort=&PORTB; _pinBitMask=_BV(PB3); _comStopMask=_BV(COM2A1)|_BV(COM2A0); break;
         }
     #endif
-
-    // If the pin was valid and a timer was assigned...
     if (_timerId != TID_INVALID) {
-        // ...register this object instance in the static array for its timer.
         _instances[_timerId] = this;
-        // And set the pin as an output.
         pinMode(_pin, OUTPUT);
+    } else {
+      _error = INVALID_PIN;
     }
+#endif
 }
 
-/**
- * @brief The main "workhorse" function to start a pulse train.
- */
 bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pulses) {
-    // 1. --- Safety Checks ---
     if (_isRunning || _timerId == TID_INVALID || frequency == 0 || mode > CONTINUOUS || mode <= STOP) {
         _error = _isRunning ? ACTIVE : _error;
         _error = frequency == 0 ? ZERO_HZ : _error;
@@ -220,197 +128,211 @@ bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pu
         return false;
     }
 
-    // 2. --- Set Internal State ---
     _pulseMode = mode;
+
+#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
+    // --- UNO R4 Generate Logic ---
     if (_pulseMode == DISCRETE) {
-        // For N high pulses finishing LOW, we need 2*N total toggles.
+        _pulsesToGenerate = pulses;
+        _pulseCounter = _pulsesToGenerate;
+    }
+    
+    // Select the correct hardcoded callback based on the timer channel for this pin.
+    void (*selected_callback)(timer_callback_args_t*) = nullptr;
+    if (_timer_channel < (sizeof(r4_callbacks) / sizeof(r4_callbacks[0]))) {
+      selected_callback = r4_callbacks[_timer_channel];
+    }
+
+    // We must use the .begin() method to register the callback.
+    _timer.begin(TIMER_MODE_PWM, _is_agt, _timer_channel, frequency, 50, selected_callback);
+    
+    if (mode == DISCRETE) {
+        // ** FIX #2: Call setup_overflow_irq() with NO arguments. **
+        // This enables the interrupt for the callback that was already registered in .begin().
+        _timer.setup_overflow_irq();
+    }
+    _timer.add_pwm_extended_cfg();
+    _timer.enable_pwm_channel(_pwm_channel);
+     // --- ADD THIS CHECK ---
+    if (!_timer.open()) {
+        // If open() returns false, the hardware setup failed.
+        _error = 7; // Let's use 7 as a custom error for "TIMER_OPEN_FAILED"
+        _isRunning = false;
+        return false;
+    }
+    // --- END OF CHECK ---
+
+    _timer.start();
+    _isRunning = true;
+    return true;
+
+#else
+    // --- AVR Generate Logic ---
+    if (_pulseMode == DISCRETE) {
         _pulsesToGenerate = pulses * 2;
         _pulseCounter = _pulsesToGenerate;
     }
-
     uint32_t ocrValue;
     uint8_t prescalerBits;
-
     if (!_calculateTimingParameters(frequency, ocrValue, prescalerBits)) {
-        return false; // New frequency is out of range
+        return false;
     }
-     // Disable global interrupts during hardware configuration to prevent issues.
     cli();
 
-    // Reset timer control registers to a clean slate.
     *_tccrA = 0;
     *_tccrB = 0;
-
-    // 4. --- Write Configuration to Hardware Registers ---
     *_ocr = ocrValue;
-    
-    // This generic logic works because the constructor stored the correct bit names.
     switch (_timerId) {
         case TID_TIMER1: case TID_TIMER3: case TID_TIMER4: case TID_TIMER5:
-            *_tccrA |= _BV(COM1A0);  // Set Toggle on Compare Match
-            *_tccrB |= _BV(WGM12);   // Set CTC mode
-            break;
+            *_tccrA |= _BV(COM1A0); *_tccrB |= _BV(WGM12); break;
         case TID_TIMER2:
-            *_tccrA |= _BV(COM2A0) | _BV(WGM21); // Set Toggle and CTC mode for Timer2
-            break;
+            *_tccrA |= _BV(COM2A0) | _BV(WGM21); break;
     }
-    
-    // 5. --- Enable Interrupts and Start Timer ---
     if (mode == DISCRETE) {
-        *_timsk |= (1 << _ocieBit); // Enable interrupt only if needed.
+        *_timsk |= (1 << _ocieBit);
     }
     _isRunning = true;
     *_tccrB |= prescalerBits;
-
-    sei(); // Re-enable global interrupts.
+    sei();
     return true;
+#endif
 }
 
-/**
- * @brief Instantly updates the frequency, changing the prescaler if necessary.
- */
 bool pulseTrainOutput::updateFrequency(uint32_t newFrequency) {
-    // 1. --- Safety Checks ---
     if (!_isRunning || newFrequency == 0) {
         return false;
     }
+#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
+    bool success = _timer.set_frequency(newFrequency);
+    if (success) {
+        // IMPORTANT: The FspTimer::set_frequency function does not automatically
+        // update the duty cycle to match the new period. We must manually
+        // re-apply our desired 50% duty cycle. This forces the library to
+        // recalculate the compare value based on the new period.
+        uint32_t period_counts = _timer.get_period_raw(); 
 
-    // 2. --- Calculate New OCR and Prescaler ---
-    // This logic is reused from the generate() function to find the optimal
-    // prescaler and OCR value for the new frequency.
+        // Calculate the new duty cycle for 50%
+        uint32_t duty_counts = period_counts / 2;
+
+        // Set the new duty cycle in raw counts
+        success = _timer.set_duty_cycle(duty_counts, _pwm_channel);
+    }
+    return success;
+#else
     uint32_t ocrValue;
     uint8_t prescalerBits;
-
     if (!_calculateTimingParameters(newFrequency, ocrValue, prescalerBits)) {
-        return false; // New frequency is out of range
-    }
-
-    // 3. --- Perform the Hardware Update ---
-    cli(); // Disable interrupts for safety
-
-    // Temporarily stop the timer by clearing the clock bits.
-    // This is the cleanest way to change the prescaler.
-    uint8_t tccrb_cache = *_tccrB; // Cache the current TCCRB value
-    *_tccrB &= ~(_BV(CS12) | _BV(CS11) | _BV(CS10)); // Universal mask for all timers
-
-    // Update the OCR value to the new target.
-    *_ocr = ocrValue;
-
-    // Restart the timer with the new prescaler.
-    // We restore the old TCCRB value (minus the old clock bits)
-    // and apply the new clock bits.
-    *_tccrB = (tccrb_cache & ~(_BV(CS12) | _BV(CS11) | _BV(CS10))) | prescalerBits;
-
-    sei(); // Re-enable interrupts
-
-    return true; // Success!
-}
-
-bool pulseTrainOutput::_calculateTimingParameters(uint32_t frequency, uint32_t& ocrValue, uint8_t& prescalerBits) {
-    uint32_t maxOcr = _is16bit ? 0xFFFF : 0xFF;
-
-    // Prescaler and OCR Calculation Logic.
-    // This block tries each prescaler from fastest to slowest until it finds one
-    // that allows the calculated OCR value to fit within the timer's bit-depth.
-    if (_is16bit) { // For 16-bit timers (1, 3, 4, 5)
-        ocrValue = (F_CPU / (2UL * frequency)) - 1;
-        prescalerBits = _BV(CS10); // Prescaler 1
-        if (ocrValue > maxOcr) {
-            ocrValue = (F_CPU / (2UL * 8 * frequency)) - 1;
-            prescalerBits = _BV(CS11); // Prescaler 8
-        }
-        if (ocrValue > maxOcr) {
-            ocrValue = (F_CPU / (2UL * 64 * frequency)) - 1;
-            prescalerBits = _BV(CS11) | _BV(CS10); // Prescaler 64
-        }
-        if (ocrValue > maxOcr) {
-            ocrValue = (F_CPU / (2UL * 256 * frequency)) - 1;
-            prescalerBits = _BV(CS12); // Prescaler 256
-        }
-        if (ocrValue > maxOcr) {
-            ocrValue = (F_CPU / (2UL * 1024 * frequency)) - 1;
-            prescalerBits = _BV(CS12) | _BV(CS10); // Prescaler 1024
-        }
-    }//
-    else { // For 8-bit Timer2
-        ocrValue = (F_CPU / (2UL * frequency)) - 1;
-        prescalerBits = _BV(CS20); // Prescaler 1
-        if (ocrValue > maxOcr) {
-            ocrValue = (F_CPU / (2UL * 8 * frequency)) - 1;
-            prescalerBits = _BV(CS21); // Prescaler 8
-        }
-        if (ocrValue > maxOcr) {
-            ocrValue = (F_CPU / (2UL * 32 * frequency)) - 1;
-            prescalerBits = _BV(CS21) | _BV(CS20); // Prescaler 32
-        }
-        if (ocrValue > maxOcr) {
-            ocrValue = (F_CPU / (2UL * 64 * frequency)) - 1;
-            prescalerBits = _BV(CS22); // Prescaler 64
-        }
-        if (ocrValue > maxOcr) {
-            ocrValue = (F_CPU / (2UL * 128 * frequency)) - 1;
-            prescalerBits = _BV(CS22) | _BV(CS20); // Prescaler 128
-        }
-        if (ocrValue > maxOcr) {
-            ocrValue = (F_CPU / (2UL * 256 * frequency)) - 1;
-            prescalerBits = _BV(CS22) | _BV(CS21); // Prescaler 256
-        }
-        if (ocrValue > maxOcr) {
-            ocrValue = (F_CPU / (2UL * 1024 * frequency)) - 1;
-            prescalerBits = _BV(CS22) | _BV(CS21) | _BV(CS20); // Prescaler 1024
-        }
-    }
-    
-    // If the value is still too large, the frequency is out of range.
-    if (ocrValue > maxOcr) {
-        _error = FREQUENCY_HIGH;
         return false;
     }
+    cli();
+    uint8_t tccrb_cache = *_tccrB; 
+    *_tccrB &= ~(_BV(CS12) | _BV(CS11) | _BV(CS10));
+    *_ocr = ocrValue;
+    *_tccrB = (tccrb_cache & ~(_BV(CS12) | _BV(CS11) | _BV(CS10))) | prescalerBits;
+    sei();
     return true;
+#endif
 }
 
-/**
- * @brief Stops the timer and ensures the pin is left in a LOW state.
- */
+#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
 void pulseTrainOutput::stop() {
-    *_tccrA &= ~_comStopMask; // Instantly disconnect pin
-    *_outputPort &= ~_pinBitMask; // Force pin LOW
-
+    if (!_isRunning) return;
+    _timer.stop();
+    _timer.end();
+    _isRunning = false;
+}
+#else
+void pulseTrainOutput::stop() {
+    *_tccrA &= ~_comStopMask;
+    *_outputPort &= ~_pinBitMask;
     switch (_timerId) {
         case TID_TIMER1: case TID_TIMER3: case TID_TIMER4: case TID_TIMER5:
             *_tccrB &= ~(_BV(CS12) | _BV(CS11) | _BV(CS10)); break;
         case TID_TIMER2:
             *_tccrB &= ~(_BV(CS22) | _BV(CS21) | _BV(CS20)); break;
     }
-    
     *_timsk &= ~(1 << _ocieBit);
     _isRunning = false;
 }
+#endif
 
-/**
- * @brief The ISR handler. It increments the pulse counter and stops when the target is reached.
- */
+#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
 void pulseTrainOutput::handleInterrupt() {
-    if (_pulseMode == DISCRETE) {
-        _pulseCounter--;
-        if (_pulseCounter == 0) {
-            stop();
+        if (_pulseMode == DISCRETE) {
+            if (_pulseCounter == 0) {
+                stop();
+            }
+            if (_pulseCounter > 0) {
+                _pulseCounter--;
+                if (_pulseCounter == 0) {
+                    // Instead of stopping, we command the PWM to be silent for the next full cycle.
+                    // This holds the output pin low, creating our "final off cycle".
+                    _timer.set_duty_cycle(0, _pwm_channel);
+                }
+            }
         }
     }
-}
+#else
+void pulseTrainOutput::handleInterrupt() {
+        if (_pulseMode == DISCRETE) {
+            _pulseCounter--;
 
-/**
- * @brief Checks if the timer is running.
- * @return true if running, false otherwise.
- */
+            if (_pulseCounter == 1) {
+                // This is the interrupt for the RISING edge of the very last pulse.
+                // We reconfigure the timer's NEXT action from "Toggle" to "Clear" (Force LOW).
+                // This must be done in a single, atomic operation to prevent a glitch.
+                
+                uint8_t currentTCCRA = *_tccrA;
+                // First, clear the existing COM bits (both 1 and 0)
+                currentTCCRA &= ~(_BV(COM1A1) | _BV(COM1A0));
+                // Then, set the new COM bits for "Clear on Compare Match" (COMxA1=1, COMxA0=0)
+                currentTCCRA |= _BV(COM1A1);
+                // Write the new configuration back to the register in one operation.
+                *_tccrA = currentTCCRA;
+
+            }//
+             else if (_pulseCounter == 0) {
+                stop();
+            }
+        }
+    }
+#endif
+
+
 bool pulseTrainOutput::isRunning() const{
     return _isRunning;
 }
 
-/**
- * @brief Checks if there was an error with generating.
- * @return Returns the current error, if any.
- */
 uint8_t pulseTrainOutput::getError() const{
     return _error;
 }
+
+#if !defined(ARDUINO_UNOR4_MINIMA) && !defined(ARDUINO_UNOR4_WIFI)
+bool pulseTrainOutput::_calculateTimingParameters(uint32_t frequency, uint32_t& ocrValue, uint8_t& prescalerBits) {
+    uint32_t maxOcr = _is16bit ? 0xFFFF : 0xFF;
+    if (_is16bit) {
+        ocrValue = (F_CPU / (2UL * frequency)) - 1; prescalerBits = _BV(CS10);
+        if (ocrValue > maxOcr) { ocrValue = (F_CPU / (2UL * 8 * frequency)) - 1; prescalerBits = _BV(CS11); }
+        if (ocrValue > maxOcr) { ocrValue = (F_CPU / (2UL * 64 * frequency)) - 1; prescalerBits = _BV(CS11) | _BV(CS10); }
+        if (ocrValue > maxOcr) { ocrValue = (F_CPU / (2UL * 256 * frequency)) - 1; prescalerBits = _BV(CS12); }
+        if (ocrValue > maxOcr) { ocrValue = (F_CPU / (2UL * 1024 * frequency)) - 1; prescalerBits = _BV(CS12) | _BV(CS10); }
+    } else {
+        ocrValue = (F_CPU / (2UL * frequency)) - 1; prescalerBits = _BV(CS20);
+        if (ocrValue > maxOcr) { ocrValue = (F_CPU / (2UL * 8 * frequency)) - 1; prescalerBits = _BV(CS21); }
+        if (ocrValue > maxOcr) { ocrValue = (F_CPU / (2UL * 32 * frequency)) - 1; prescalerBits = _BV(CS21) | _BV(CS20); }
+        if (ocrValue > maxOcr) { ocrValue = (F_CPU / (2UL * 64 * frequency)) - 1; prescalerBits = _BV(CS22); }
+        if (ocrValue > maxOcr) { ocrValue = (F_CPU / (2UL * 128 * frequency)) - 1; prescalerBits = _BV(CS22) | _BV(CS20); }
+        if (ocrValue > maxOcr) { ocrValue = (F_CPU / (2UL * 256 * frequency)) - 1; prescalerBits = _BV(CS22) | _BV(CS21); }
+        if (ocrValue > maxOcr) { ocrValue = (F_CPU / (2UL * 1024 * frequency)) - 1; prescalerBits = _BV(CS22) | _BV(CS21) | _BV(CS20); }
+    }
+    if (ocrValue > maxOcr) {
+        _error = FREQUENCY_HIGH;
+        return false;
+    }
+    return true;
+}
+#else
+bool pulseTrainOutput::_calculateTimingParameters(uint32_t, uint32_t&, uint8_t&) {
+    return false;
+}
+#endif
