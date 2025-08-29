@@ -9,11 +9,11 @@
  * compatable with the Uno, but not the Mega. 
  * 
  * For a complete list of compatable pins for a given microcontroller, see the README file.
- * 
+ * @see https://github.com/CostelloTechnical/pulseTrainOutput/blob/main/README.md
  * @date 2025-08-21
 */
 
-#include "jct_pulseTrainOutput.h"
+#include "pulseTrainOutput.h"
 
 pulseTrainOutput pto1(11);     // Setting the pin that we want to generate pulses from.
 pulseTrainOutput pto2(9);      // Setting the pin that we want to generate pulses from.

@@ -1,11 +1,12 @@
 /**
- * @file jct_pulseTrainOutput.cpp
- * @author CostelloTechnical
+ * @file pulseTrainOutput.cpp
+ * @author Costello Technical
  * @brief Source file for the jct_pulseTrainOutput library.
  * This library provides a C++ class to generate precise, hardware-timed
  * pulse trains on various output pins of Arduino Uno, Mega, and R4 boards.
  * @version 1.5
  * @date 2025-08-27
+ * @see https://github.com/CostelloTechnical/pulseTrainOutput/blob/main/README.md
 
  ==============================================================================
                                   DISCLAIMER
@@ -55,7 +56,7 @@
   UNO R4
     TBC....
 */
-#include "jct_pulseTrainOutput.h"
+#include "pulseTrainOutput.h"
 
 // Initialize the static array of pointers.
 pulseTrainOutput* pulseTrainOutput::_instances[10] = {nullptr};

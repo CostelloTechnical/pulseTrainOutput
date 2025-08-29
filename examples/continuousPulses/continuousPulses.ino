@@ -9,11 +9,12 @@
  * pin to the serial monitor.
  * 
  * For a complete list of compatable pins for a given microcontroller, see the README file.
+ * @see https://github.com/CostelloTechnical/pulseTrainOutput/blob/main/README.md
  * 
  * @date 2025-08-21
 */
 
-#include "jct_pulseTrainOutput.h"
+#include "pulseTrainOutput.h"
 
 pulseTrainOutput pto(11);      // Setting the pin that we want to generate pulses from.
 uint32_t stopTimer_ms;         // A timer to stop the continuous wave after x milliseconds.
