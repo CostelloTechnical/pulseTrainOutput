@@ -46,29 +46,32 @@ This library is board-aware and will automatically use the correct timer for the
 | 6    | Timer4 | A        | 16-bit.   | 1 Hz   | 8 MHz  |
 | 46   | Timer5 | A        | 16-bit.   | 1 Hz   | 8 MHz  |
 
-### Arduino Uno R4
+### Arduino Uno R4 Minima
 
-| Pin  | Timer | Channel  | Bitness   | Min Hz | Max Hz | Notes  |
-| :--- | :---- | :------- | :-------  | :----- | :----- | :----- |
-| 5    | GPT0  | A        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
-| 4    | GPT0  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
-| 3    | GPT1  | A        | 8-bit.    | 1 Hz   | 8 MHz  |   --   |
-| 2    | GPT1  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
-| 13   | GPT2  | A        | 16-bit.   | 1 Hz   | 8 MHz  | LED    |
-| 10   | GPT2  | B        | 16-bit.   | 1 Hz   | 8 MHz  | SPI CS |
-| 6    | GPT3  | A        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
-| 7    | GPT3  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
-| 1    | GPT4  | A        | 16-bit.   | 1 Hz   | 8 MHz  |  TX    |
-| 0    | GPT4  | B        | 16-bit.   | 1 Hz   | 8 MHz  |  RX    |
-| A5   | GPT5  | A        | 16-bit.   | 1 Hz   | 8 MHz  |  SCL   |
-| A4   | GPT5  | B        | 16-bit.   | 1 Hz   | 8 MHz  |  SDA   |
-| 11   | GPT6  | A        | 16-bit.   | 1 Hz   | 8 MHz  |SPI COPI|
-| 12   | GPT6  | B        | 16-bit.   | 1 Hz   | 8 MHz  |SPI CIPO|
-| 8    | GPT7  | A        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
-| 9    | GPT7  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| Pin  | Timer  | Channel  | Bitness   | Min Hz | Max Hz | Notes  |
+| :--- | :----  | :------- | :-------  | :----- | :----- | :----- |
+| 5    |  GPT0  | A        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 4    |  GPT0  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 3    |  GPT1  | A        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 2    |  GPT1  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 13   |  GPT2  | A        | 16-bit.   | 1 Hz   | 8 MHz  | SPI SCK|
+| 10   |  GPT2  | B        | 16-bit.   | 1 Hz   | 8 MHz  | SPI CS |
+| 6    |  GPT3  | A        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 7    |  GPT3  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 1    |  GPT4  | A        | 16-bit.   | 1 Hz   | 8 MHz  |   TX   |
+| 0    |  GPT4  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   RX   |
+| A5   |  GPT5  | A        | 16-bit.   | 1 Hz   | 8 MHz  |  SCL   |
+| A4   |  GPT5  | B        | 16-bit.   | 1 Hz   | 8 MHz  |  SDA   |
+| 11   |  GPT6  | A        | 16-bit.   | 1 Hz   | 8 MHz  |SPI COPI|
+| 12   |  GPT6  | B        | 16-bit.   | 1 Hz   | 8 MHz  |SPI CIPO|
+| 8    |  GPT7  | A        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 9    |  GPT7  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
 
 
-Note: On the AVR boardsm, timer0 pins and Channel B/C pins are currently unsupported to maintain simplicity and avoid conflicts with core Arduino timing functions like millis() and delay().
+##Notes: 
+* On the AVR boardsm, timer0 pins and Channel B/C pins are currently unsupported to maintain simplicity and avoid conflicts with core Arduino timing functions like millis() and delay().
+* The Max frequency on the R4 is a limitation of the measurement I was able to do with the equipment I had at the time of testing.
+* 
 
 ## Basic Usage (Quick Start)
 
