@@ -29,7 +29,7 @@ This library allows for direct control of the AVR microcontroller's hardware tim
 
 This library is board-aware and will automatically use the correct timer for the pin you select.
 
-### Arduino Uno, Nano and Pro Mini
+### Arduino Uno R3, Nano and Pro Mini
 
 | Pin  | Timer  | Channel | Bitness | Min Hz | Max Hz |
 | :--- | :----- | :-------| :------ | :----- | :----- |
@@ -46,11 +46,33 @@ This library is board-aware and will automatically use the correct timer for the
 | 6    | Timer4 | A        | 16-bit.   | 1 Hz   | 8 MHz  |
 | 46   | Timer5 | A        | 16-bit.   | 1 Hz   | 8 MHz  |
 
-Note: Timer0 pins and Channel B/C pins are currently unsupported to maintain simplicity and avoid conflicts with core Arduino timing functions like millis() and delay().
+### Arduino Uno R4
+
+| Pin  | Timer | Channel  | Bitness   | Min Hz | Max Hz | Notes  |
+| :--- | :---- | :------- | :-------  | :----- | :----- | :----- |
+| 5    | GPT0  | A        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 4    | GPT0  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 3    | GPT1  | A        | 8-bit.    | 1 Hz   | 8 MHz  |   --   |
+| 2    | GPT1  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 13   | GPT2  | A        | 16-bit.   | 1 Hz   | 8 MHz  | LED    |
+| 10   | GPT2  | B        | 16-bit.   | 1 Hz   | 8 MHz  | SPI CS |
+| 6    | GPT3  | A        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 7    | GPT3  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 1    | GPT4  | A        | 16-bit.   | 1 Hz   | 8 MHz  |  TX    |
+| 0    | GPT4  | B        | 16-bit.   | 1 Hz   | 8 MHz  |  RX    |
+| A5   | GPT5  | A        | 16-bit.   | 1 Hz   | 8 MHz  |  SCL   |
+| A4   | GPT5  | B        | 16-bit.   | 1 Hz   | 8 MHz  |  SDA   |
+| 11   | GPT6  | A        | 16-bit.   | 1 Hz   | 8 MHz  |SPI COPI|
+| 12   | GPT6  | B        | 16-bit.   | 1 Hz   | 8 MHz  |SPI CIPO|
+| 8    | GPT7  | A        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+| 9    | GPT7  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
+
+
+Note: On the AVR boardsm, timer0 pins and Channel B/C pins are currently unsupported to maintain simplicity and avoid conflicts with core Arduino timing functions like millis() and delay().
 
 ## Basic Usage (Quick Start)
 
-A minimal example to generate a continuous 1 kHz square wave on Pin 11. Compatible with Uno or Mega.
+A minimal example to generate a continuous 1 kHz square wave on Pin 11. Compatible with Uno R3, Uno R4 or Mega.
 
 ```cpp
 #include "pulseTrainOutput.h"
@@ -68,7 +90,7 @@ void loop() {
 }
 ```
 
-A minimal example to generate a discrete 10 kHz 4 pulse square wave on Pin 11. Compatible with Uno or Mega.
+A minimal example to generate a discrete 10 kHz 4 pulse square wave on Pin 11. Compatible with Uno R3, Uno R4 or Mega.
 
 ```cpp
 #include "pulseTrainOutput.h"
@@ -97,8 +119,3 @@ A brief overview of the main public functions.
 * isRunning()  :  Returns true if the timer is currently active, otherwise false is returned.
 * getError()  :  Returns zero if there's no error, otherwise there's an error.
 
-## License
-
-This software is provided "as is", without warranty of any kind. Permission is hereby granted, free of charge, to any person obtaining a copy of this software to deal in the Software without restriction.
-
-It is highly encouraged that if you find this library useful, you provide attribution back to the original author.
