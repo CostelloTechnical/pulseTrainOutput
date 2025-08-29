@@ -8,7 +8,6 @@
  * @date 2025-08-27
  * @see https://github.com/CostelloTechnical/pulseTrainOutput/blob/main/README.md
  
- 
   ==============================================================================
                                   DISCLAIMER
   ==============================================================================
@@ -56,13 +55,14 @@ enum pulseModes {
 };
 
 enum errors{
-  NO_ERROR = 0,        // No error.
-  INVALID_PIN = 1,     // There was an invalid pin input in the constructor. Check the allowable pins for the microcontroller.
-  ZERO_HZ = 2,         // 0Hz is not an allowable frequency.
-  ACTIVE = 3,          // The timer is currently generating.
-  INVALID_MODE = 4,    // An invalid mode was selected.
-  FREQUENCY_HIGH = 5,  // The frequency is out of range.
-  ZERO_PULSES = 6      // Zero is not an allowable number of pulses.
+  NO_ERROR = 0,            // No error.
+  INVALID_PIN = 1,         // There was an invalid pin input in the constructor. Check the allowable pins for the microcontroller.
+  ZERO_HZ = 2,             // 0Hz is not an allowable frequency.
+  ACTIVE = 3,              // The timer is currently generating.
+  INVALID_MODE = 4,        // An invalid mode was selected.
+  FREQUENCY_HIGH = 5,      // The frequency is out of range.
+  ZERO_PULSES = 6,         // Zero is not an allowable number of pulses.
+  TIMER_OPEN_FAILED = 7    // Zero is not an allowable number of pulses.
 };
 
 /**
@@ -157,13 +157,6 @@ class pulseTrainOutput{
     static void r4_gpt_callback_5(timer_callback_args_t *p_args);
     static void r4_gpt_callback_6(timer_callback_args_t *p_args);
     static void r4_gpt_callback_7(timer_callback_args_t *p_args);
-#endif
-
-#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
-    /**
-     * @brief The static callback function for all R4 timer events.
-     */
-    static void r4_master_callback(timer_callback_args_t *p_args);
 #endif
 
 private:

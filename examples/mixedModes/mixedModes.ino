@@ -15,8 +15,17 @@
 
 #include "pulseTrainOutput.h"
 
+
+// For the Uno R4 there's a mismatch of timer channels when using 11 and 9 as I do with 
+// the AVR boards. So I have to set them separately.
+#if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
+pulseTrainOutput pto1(8);      // Setting the pin that we want to generate pulses from.
+pulseTrainOutput pto2(5);      // Setting the pin that we want to generate pulses from.
+#else
 pulseTrainOutput pto1(11);     // Setting the pin that we want to generate pulses from.
 pulseTrainOutput pto2(9);      // Setting the pin that we want to generate pulses from.
+#endif
+
 uint32_t repeatTimer_ms;       // A timer to stop the continuous wave after x milliseconds.
 
 void setup() {
@@ -27,7 +36,7 @@ void setup() {
 
 void loop() {
     if(millis() - repeatTimer_ms > 3000){    // Has the repeat time elapsed.
-        pto2.generate(1000, DISCRETE, 4);     // Generate another 4 pulses at 1000Hz.
+        pto1.generate(1000, DISCRETE, 4);     // Generate another 4 pulses at 1000Hz.
         repeatTimer_ms = millis();           // Reset the timer.
     }
 }

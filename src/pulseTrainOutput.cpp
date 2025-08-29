@@ -8,7 +8,7 @@
  * @date 2025-08-27
  * @see https://github.com/CostelloTechnical/pulseTrainOutput/blob/main/README.md
 
- ==============================================================================
+  ==============================================================================
                                   DISCLAIMER
   ==============================================================================
 
@@ -34,7 +34,7 @@
   It is highly encouraged that if you find this library useful, you provide
   attribution back to the original author.
 
-    ==============================================================================
+  ==============================================================================
                             INFORMATION ON USE
   ==============================================================================
 
@@ -124,7 +124,7 @@ pulseTrainOutput::pulseTrainOutput(uint8_t pin) {
     _pin = pin;
     _timerId = TID_INVALID; 
     _isRunning = false;
-    _error = 0;
+    _error = NO_ERROR;
 
 #if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
     auto pin_cgf = getPinCfgs(_pin, PIN_CFG_REQ_PWM);
@@ -167,13 +167,24 @@ pulseTrainOutput::pulseTrainOutput(uint8_t pin) {
 }
 
 bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pulses) {
-    if (_isRunning || _timerId == TID_INVALID || frequency == 0 || mode > CONTINUOUS || mode <= STOP) {
-        _error = _isRunning ? ACTIVE : _error;
-        _error = frequency == 0 ? ZERO_HZ : _error;
-        _error = _timerId == TID_INVALID ? INVALID_PIN : _error;
-        _error = mode > CONTINUOUS ? INVALID_MODE : _error;
-        _error = mode <= STOP ? INVALID_MODE : _error;
-        _error = (pulses == 0 && mode == DISCRETE) ? ZERO_PULSES : _error;
+    if (_isRunning) {
+        _error = ACTIVE;
+        return false;
+    }
+    if (_timerId == TID_INVALID) {
+        _error = INVALID_PIN;
+        return false;
+    }
+    if (frequency == 0) {
+        _error = ZERO_HZ;
+        return false;
+    }
+    if (mode < DISCRETE || mode > CONTINUOUS) {
+        _error = INVALID_MODE;
+        return false;
+    }
+    if (pulses == 0 && mode == DISCRETE) {
+        _error = ZERO_PULSES;
         return false;
     }
 
@@ -205,7 +216,7 @@ bool pulseTrainOutput::generate(uint32_t frequency, pulseModes mode, uint32_t pu
      // --- ADD THIS CHECK ---
     if (!_timer.open()) {
         // If open() returns false, the hardware setup failed.
-        _error = 7; // Let's use 7 as a custom error for "TIMER_OPEN_FAILED"
+        _error = TIMER_OPEN_FAILED; // Let's use 7 as a custom error for "TIMER_OPEN_FAILED"
         _isRunning = false;
         return false;
     }
@@ -285,7 +296,6 @@ bool pulseTrainOutput::updateFrequency(uint32_t newFrequency) {
 
 #if defined(ARDUINO_UNOR4_MINIMA) || defined(ARDUINO_UNOR4_WIFI)
 void pulseTrainOutput::stop() {
-    if (!_isRunning) return;
     _timer.stop();
     _timer.end();
     _isRunning = false;
@@ -325,7 +335,6 @@ void pulseTrainOutput::handleInterrupt() {
 void pulseTrainOutput::handleInterrupt() {
         if (_pulseMode == DISCRETE) {
             _pulseCounter--;
-
             if (_pulseCounter == 1) {
                 // This is the interrupt for the RISING edge of the very last pulse.
                 // We reconfigure the timer's NEXT action from "Toggle" to "Clear" (Force LOW).

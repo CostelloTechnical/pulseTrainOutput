@@ -2,7 +2,7 @@
  * @file discretePulses.ino
  * @author CostelloTechnical
  * 
- * @brief This code generates 4 pulses on pin 11 of an Arduino Uno or Mega
+ * @brief This code generates 4 pulses on pin 11 of an Arduino UnoR3, UnoR4 or Mega
  * and repeats it every three seconds. If an incorrect value was entered 
  * the error is printed to the Serial monitor and explained.
  * 
@@ -19,7 +19,6 @@ uint32_t repeatTimer_ms;       // A timer to repeat generating discrete pulses x
 
 void setup() {
     Serial.begin(9600); // Start Serial for debugging.
-    while (!Serial){}   // Wait for the Serial class to be ready.
 
     Serial.println();
 

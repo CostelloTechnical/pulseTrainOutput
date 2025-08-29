@@ -14,7 +14,7 @@
  * @date 2025-08-21
 */
 
-#include "pulseTrainOutput.h"
+#include <pulseTrainOutput.h>
 
 pulseTrainOutput pto(11);      // Setting the pin that we want to generate pulses from.
 uint32_t stopTimer_ms;         // A timer to stop the continuous wave after x milliseconds.
@@ -22,7 +22,6 @@ uint32_t checkGenerating_ms;   // A timer to check if pulses are still being gen
 
 void setup() {
     Serial.begin(9600); // Start Serial for debugging.
-    while (!Serial){}   // Wait for the Serial class to be ready.
 
     Serial.println();
 
