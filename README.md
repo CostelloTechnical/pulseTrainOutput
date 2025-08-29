@@ -53,7 +53,7 @@ Note: Timer0 pins and Channel B/C pins are currently unsupported to maintain sim
 A minimal example to generate a continuous 1 kHz square wave on Pin 11. Compatible with Uno or Mega.
 
 ```cpp
-#include "jct_pulseTrainOutput.h"
+#include "pulseTrainOutput.h"
 
 // Create an object for a timer-enabled pin.
 pulseTrainOutput pto(11);
@@ -71,7 +71,7 @@ void loop() {
 A minimal example to generate a discrete 10 kHz 4 pulse square wave on Pin 11. Compatible with Uno or Mega.
 
 ```cpp
-#include "jct_pulseTrainOutput.h"
+#include "pulseTrainOutput.h"
 
 // Create an object for a timer-enabled pin.
 pulseTrainOutput pto(11);
