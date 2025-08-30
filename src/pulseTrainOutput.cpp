@@ -54,7 +54,13 @@
     reliably. All timers can generate up to 8MHz simultaneously.
 
   UNO R4
-    TBC....
+    Acceptable pins: D0, D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, A4, A5.
+    Some of these pins have additional functionality and are not suitable to be used.
+    @see https://github.com/CostelloTechnical/pulseTrainOutput/blob/main/README.md
+    Those pins will work individually, but will unlikely work if combined with others.
+    The advisable pins are: D2, D3, D4, D5, D6, D7, D8, D9.
+    Of these pins only select a single channel from a channel group per timer. 
+    It's fine to mix and match channels A and B as long as they're on different timers.
 */
 #include "pulseTrainOutput.h"
 

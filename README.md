@@ -68,10 +68,12 @@ This library is board-aware and will automatically use the correct timer for the
 | 9    |  GPT7  | B        | 16-bit.   | 1 Hz   | 8 MHz  |   --   |
 
 
-##Notes: 
-* On the AVR boardsm, timer0 pins and Channel B/C pins are currently unsupported to maintain simplicity and avoid conflicts with core Arduino timing functions like millis() and delay().
+## Notes: 
+* On the AVR boards, timer0 pins and Channel B/C pins are currently unsupported to maintain simplicity and avoid conflicts with core Arduino timing functions like millis() and delay().
+* On the R4 board, there are several timers that are tied to processes such as SPI, Serial and I2C. These pins should be avoided (see notes in the table above).
+* Also with on the R4, you must select a single channel from a channel group per timer. It's fine to mix and match channels A and B as long as they're on different timers.
 * The Max frequency on the R4 is a limitation of the measurement I was able to do with the equipment I had at the time of testing.
-* 
+
 
 ## Basic Usage (Quick Start)
 
